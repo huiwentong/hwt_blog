@@ -1,4 +1,4 @@
-# NEXUS BLOG — 暗黑极客空间
+# HWT BLOG — 暗黑极客空间
 
 一个全栈博客网站项目，前端使用 React + TypeScript + Tailwind CSS + Vite，后端使用 FastAPI + SQLite，容器化使用 Podman/Docker。
 
