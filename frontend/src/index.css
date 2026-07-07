@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+/* ── Tailwind v4 custom theme ── */
+@theme {
+  --color-dark-950: #0a0a0f;
+  --color-dark-900: #0f0f1a;
+  --color-dark-800: #1a1a2e;
+  --color-dark-700: #252540;
+  --color-dark-600: #2d2d50;
+  --color-accent: #00ff41;
+  --color-accent-dim: #00cc33;
+  --color-neon-blue: #0ff;
+  --color-neon-purple: #b388ff;
+  --color-cyber-red: #ff1744;
+}
+
+/* ── Global reset & base ── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-dark-600) transparent;
+}
+
+body {
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas",
+    "Courier New", monospace;
+  background-color: var(--color-dark-950);
+  color: #d1d5db;
+  min-height: 100vh;
+}
+
+/* ── Glitch / cyber effects ── */
+.glitch-text {
+  text-shadow:
+    0 0 5px var(--color-accent),
+    0 0 10px var(--color-accent),
+    0 0 20px var(--color-accent-dim);
+}
+
+.neon-border {
+  box-shadow:
+    0 0 2px var(--color-accent-dim),
+    0 0 5px var(--color-accent-dim),
+    inset 0 0 2px var(--color-accent-dim);
+}
+
+.terminal-card {
+  border: 1px solid var(--color-dark-600);
+  background: linear-gradient(135deg, var(--color-dark-900), var(--color-dark-800));
+  transition: all 0.3s ease;
+}
+
+.terminal-card:hover {
+  border-color: var(--color-accent-dim);
+  box-shadow: 0 0 8px var(--color-accent-dim);
+}
+
+/* ── scanline overlay ── */
+.scanlines::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 255, 65, 0.015) 2px,
+    rgba(0, 255, 65, 0.015) 4px
+  );
+  z-index: 9999;
+}
+
+/* ── custom scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-dark-950);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-dark-600);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent-dim);
+}
+
+/* ── timeline line ── */
+.timeline-line {
+  background: linear-gradient(
+    180deg,
+    var(--color-accent-dim),
+    var(--color-dark-600) 60%
+  );
+}
