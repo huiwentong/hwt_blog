@@ -26,7 +26,7 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
           onClick={() => onNavigate("home")}
           className="flex items-center gap-2 text-accent font-bold text-lg tracking-widest glitch-text"
         >
-          <span>NEXUS</span>
+          <span>HWT</span>
           <span className="text-xs text-gray-500 border border-dark-600 px-1 py-0.5 rounded">
             v1.0
           </span>

@@ -22,10 +22,10 @@ export default function Home({ onNavigate }: HomeProps) {
         {/* Hero */}
         <section className="mb-10 border-b border-dark-700 pb-8">
           <div className="mb-2 text-accent text-sm font-mono glitch-text tracking-widest">
-            $ SYSTEM_INIT — NEXUS BLOG v1.0
+            $ SYSTEM_INIT — HWT BLOG v1.0
           </div>
           <h1 className="text-3xl md:text-4xl font-bold font-mono tracking-tight text-gray-100 mb-3">
-            <span className="text-accent">NEXUS</span> — 暗黑极客空间
+            <span className="text-accent">HWT</span> — <span className="font-alibaba">惠文通的小屋</span>
           </h1>
           <p className="text-gray-500 font-mono text-sm leading-relaxed max-w-2xl">
             &gt; 代码、文字、音乐与电影的聚合体。<br />

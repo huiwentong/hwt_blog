@@ -1,0 +1,15 @@
+serverAddr = "62.234.134.129"
+serverPort = 7000
+
+auth.method = "token"
+auth.token = "abcaswedewcsadasd"
+
+
+[[proxies]]
+name = "my_fastapi"
+type = "tcp"
+
+localIP = "127.0.0.1"
+localPort = 5173
+
+remotePort = 80

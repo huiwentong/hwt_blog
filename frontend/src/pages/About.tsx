@@ -3,9 +3,10 @@ import { useState, useEffect } from "react";
 const easterEgg = [
   "> init system...",
   "> loading identity matrix...",
-  "> NEXUS core v1.0 detected.",
+  "> HWT core v1.0 detected.",
   "> ",
-  '> 我是一个热爱代码、音乐与电影的独立开发者。',
+  '> 我是惠文通',
+  '> 一个热爱代码、音乐、游戏与电影的PiplineTD&TA。',
   "> 我相信技术是表达思想的终极媒介。",
   "> 这个博客是我数字生活的剪影——",
   "> 每一行代码都是一首诗，每一段文字都是一次冒险。",
@@ -15,7 +16,7 @@ const easterEgg = [
   "> ",
   "> SYSTEM SIGNATURE:",
   "> ┌──────────────────────────────┐",
-  "> │  NEXUS_BLOG / v1.0           │",
+  "> │  HWT_BLOG / v1.0           │",
   "> │  ARCH: x64_dark              │",
   "> │  STATUS: ONLINE              │",
   "> │  UPTIME: ∞                   │",
@@ -60,7 +61,7 @@ export default function About() {
       <div className="terminal-card rounded-lg p-6 md:p-8 min-h-[300px]">
         <div className="text-xs md:text-sm text-gray-400 font-mono leading-relaxed whitespace-pre-wrap">
           {lines.map((line, i) => (
-            <div key={i} className={line.startsWith("> \"") ? "text-neon-purple" : line.includes("NEXUS") || line.includes("STATUS") || line.includes("ARCH") || line.includes("UPTIME") ? "text-accent" : ""}>
+            <div key={i} className={line.startsWith("> \"") ? "text-neon-purple" : line.includes("HWT") || line.includes("STATUS") || line.includes("ARCH") || line.includes("UPTIME") ? "text-accent" : ""}>
               {line}
             </div>
           ))}
@@ -82,7 +83,7 @@ export default function About() {
               $ reboot_sequence()
             </button>
             <p className="text-xs text-gray-600 font-mono mt-4">
-              © 2026 NEXUS BLOG — Made with ❤ and lots of caffeine.
+              © 2026 HWT BLOG — Made with ❤ and lots of caffeine.
             </p>
           </div>
         )}

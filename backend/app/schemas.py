@@ -8,7 +8,7 @@ class ArticleBase(BaseModel):
     title: str
     summary: str
     content: str
-    author: str = "NEXUS"
+    author: str = "HWT"
     category: str = "General"
     tags: list[str] = []
 

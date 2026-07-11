@@ -24,7 +24,7 @@ export default function ArticleDetail({ id, onBack }: ArticleDetailProps) {
       .then(([a, c]) => {
         setArticle(a);
         setComments(c);
-        document.title = `${a.title} — NEXUS BLOG`;
+        document.title = `${a.title} — HWT BLOG`;
       })
       .catch(() => {})
       .finally(() => setLoading(false));

@@ -1,7 +1,17 @@
 @import "tailwindcss";
 
-/* ── Tailwind v4 custom theme ── */
+
+/* ── Alibaba PuHuiTi Bold (阿里巴巴普惠体加粗) ── */
+@font-face {
+  font-family: 'Alibaba PuHuiTi';
+  src: url('./assets/AlibabaPuHuiTi-3-85-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-display: swap;
+}
+/* 鈹€鈹€ Tailwind v4 custom theme 鈹€鈹€ */
 @theme {
+  --font-alibaba: 'Alibaba PuHuiTi', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+
   --color-dark-950: #0a0a0f;
   --color-dark-900: #0f0f1a;
   --color-dark-800: #1a1a2e;
@@ -14,7 +24,7 @@
   --color-cyber-red: #ff1744;
 }
 
-/* ── Global reset & base ── */
+/* 鈹€鈹€ Global reset & base 鈹€鈹€ */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--color-dark-600) transparent;
@@ -28,7 +38,7 @@ body {
   min-height: 100vh;
 }
 
-/* ── Glitch / cyber effects ── */
+/* 鈹€鈹€ Glitch / cyber effects 鈹€鈹€ */
 .glitch-text {
   text-shadow:
     0 0 5px var(--color-accent),
@@ -54,7 +64,7 @@ body {
   box-shadow: 0 0 8px var(--color-accent-dim);
 }
 
-/* ── scanline overlay ── */
+/* 鈹€鈹€ scanline overlay 鈹€鈹€ */
 .scanlines::after {
   content: "";
   position: fixed;
@@ -73,7 +83,7 @@ body {
   z-index: 9999;
 }
 
-/* ── custom scrollbar ── */
+/* 鈹€鈹€ custom scrollbar 鈹€鈹€ */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -88,7 +98,7 @@ body {
   background: var(--color-accent-dim);
 }
 
-/* ── timeline line ── */
+/* 鈹€鈹€ timeline line 鈹€鈹€ */
 .timeline-line {
   background: linear-gradient(
     180deg,

@@ -14,7 +14,7 @@ function App() {
   const [articleId, setArticleId] = useState<number | null>(null);
 
   useEffect(() => {
-    document.title = "NEXUS BLOG — 暗黑极客空间";
+    document.title = "HWT BLOG — 我的博客空间";
   }, []);
 
   const navigate = (p: Page, id?: number) => {
@@ -49,7 +49,7 @@ function App() {
         {renderPage()}
       </main>
       <footer className="border-t border-dark-700 py-4 text-center text-xs text-gray-600">
-        <span className="text-accent">?</span> NEXUS BLOG v1.0 — Built with
+        <span className="text-accent">?</span> HWT BLOG v1.0 — Built with
         React + FastAPI &nbsp;|&nbsp; <span className="text-accent">_</span>
       </footer>
     </div>

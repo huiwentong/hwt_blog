@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, text
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -11,10 +11,10 @@ class Article(Base):
     title = Column(String(200), nullable=False)
     summary = Column(Text, nullable=False)
     content = Column(Text, nullable=False)
-    author = Column(String(50), default="NEXUS")
+    author = Column(String(50), default="HWT")
     category = Column(String(50), default="General")
     tags = Column(Text, default="")  # comma-separated
-    views = Column(Integer, default=0)
+    views = Column(Integer, server_default=text("0"))
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
@@ -32,6 +32,8 @@ class Comment(Base):
     article_id = Column(Integer, ForeignKey("articles.id"), nullable=False)
     author = Column(String(50), nullable=False)
     content = Column(Text, nullable=False)
+    ip_address = Column(String(45), default="")
+    user_agent = Column(Text, default="")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     article = relationship("Article", back_populates="comments")

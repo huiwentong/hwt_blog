@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, text
 from contextlib import asynccontextmanager
 
 from app.database import engine, get_db, Base
@@ -10,14 +10,34 @@ from app.schemas import SiteInfoResponse, CategoryCount
 from app.models import Article, Comment
 
 
+def run_migration():
+    """Add missing columns and fix NULL values."""
+    conn = engine.connect()
+    try:
+        # Fix NULL views in articles
+        conn.execute(text("UPDATE articles SET views = 0 WHERE views IS NULL"))
+
+        # Check if ip_address column exists in comments
+        result = conn.execute(text("PRAGMA table_info(comments)")).fetchall()
+        cols = [row[1] for row in result]
+        if "ip_address" not in cols:
+            conn.execute(text("ALTER TABLE comments ADD COLUMN ip_address VARCHAR(45) DEFAULT ''"))
+        if "user_agent" not in cols:
+            conn.execute(text("ALTER TABLE comments ADD COLUMN user_agent TEXT DEFAULT ''"))
+        conn.commit()
+    finally:
+        conn.close()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    run_migration()
     yield
 
 
 app = FastAPI(
-    title="NEXUS BLOG API",
+    title="HWT BLOG API",
     version="1.0.0",
     description="Dark hacker blog backend API",
     lifespan=lifespan,
@@ -54,4 +74,4 @@ def get_site_info(db: Session = Depends(get_db)):
 
 @app.get("/api/health")
 def health():
-    return {"status": "online", "system": "NEXUS BLOG v1.0"}
+    return {"status": "online", "system": "HWT BLOG v1.0"}

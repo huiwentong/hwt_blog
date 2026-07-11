@@ -5,11 +5,11 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: nexus-backend
+    container_name: hwt-backend
     ports:
       - "8000:8000"
     volumes:
-      - nexus-data:/app/nexus_blog.db
+      - hwt-data:/app/hwt_blog.db
     environment:
       - UVICORN_RELOAD=false
     healthcheck:
@@ -22,11 +22,11 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: nexus-frontend
+    container_name: hwt-frontend
     ports:
       - "80:80"
     depends_on:
       - backend
 
 volumes:
-  nexus-data:
+  hwt-data:
