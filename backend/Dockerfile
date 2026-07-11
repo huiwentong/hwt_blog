@@ -1,6 +1,9 @@
-FROM python:3.11-alpine
+﻿FROM python:3.11-alpine
 
 WORKDIR /app
+
+# Install system dependencies (curl for healthcheck)
+RUN apk add --no-cache curl
 
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
@@ -8,8 +11,8 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 # Copy dependency files
 COPY pyproject.toml ./
 
-# Install dependencies
-RUN uv sync --no-dev
+# Install dependencies (no cache to keep image small)
+RUN uv sync --no-dev --no-cache
 
 # Copy app code
 COPY . .

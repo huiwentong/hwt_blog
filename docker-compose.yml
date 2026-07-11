@@ -1,32 +1,36 @@
-version: "3.8"
-
-services:
+﻿services:
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: hwt-backend
+    restart: unless-stopped
     ports:
       - "8000:8000"
     volumes:
-      - hwt-data:/app/hwt_blog.db
-    environment:
-      - UVICORN_RELOAD=false
+      - hwt-data:/app/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
       interval: 10s
       timeout: 5s
       retries: 3
+      start_period: 10s
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: hwt-frontend
+    restart: unless-stopped
     ports:
       - "80:80"
+    volumes:
+      - /mnt/p:/media/music:ro
+      - /mnt/f:/media/movies:ro
+      - /mnt/m:/media/pictures:ro
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
   hwt-data:
