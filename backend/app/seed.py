@@ -159,13 +159,13 @@ for a in articles_data:
 db.flush()
 
 comments_data = [
-    Comment(article_id=1, author="RustFan", content="写得很清楚，对我理解所有权很有帮助！"),
-    Comment(article_id=1, author="CodeWanderer", content="NLL 让借用检查器变得更智能了。"),
-    Comment(article_id=3, author="DBGeek", content="好文！LSM-Tree 确实改变了数据库领域的格局。"),
-    Comment(article_id=3, author="GoDev", content="用 Go 实现 LSM-Tree 是个好主意。"),
-    Comment(article_id=4, author="IndieDev", content="同为独立开发者，感同身受。"),
-    Comment(article_id=7, author="HistoryBuff", content="推荐看看《凌晨三点的切尔诺贝利》。"),
-    Comment(article_id=9, author="Bookworm", content="《百年孤独》我读了四遍，每次都有新的发现。"),
+    Comment(article_id=1, author="RustFan", content="写得很清楚，对我理解所有权很有帮助！", ip_address="103.235.46.12", user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"),
+    Comment(article_id=1, author="CodeWanderer", content="NLL 让借用检查器变得更智能了。", ip_address="198.51.100.33", user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15"),
+    Comment(article_id=3, author="DBGeek", content="好文！LSM-Tree 确实改变了数据库领域的格局。", ip_address="203.0.113.78", user_agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"),
+    Comment(article_id=3, author="GoDev", content="用 Go 实现 LSM-Tree 是个好主意。", ip_address="192.0.2.15", user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0"),
+    Comment(article_id=4, author="IndieDev", content="同为独立开发者，感同身受。", ip_address="172.16.0.88", user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"),
+    Comment(article_id=7, author="HistoryBuff", content="推荐看看《凌晨三点的切尔诺贝利》。", ip_address="10.0.0.44", user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0"),
+    Comment(article_id=9, author="Bookworm", content="《百年孤独》我读了四遍，每次都有新的发现。", ip_address="203.0.113.99", user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1"),
 ]
 
 for c in comments_data:

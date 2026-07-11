@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+﻿from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Comment, Article
@@ -19,15 +19,32 @@ def list_comments(article_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=CommentResponse, status_code=201)
-def create_comment(article_id: int, payload: CommentCreate, db: Session = Depends(get_db)):
+def create_comment(
+    article_id: int,
+    payload: CommentCreate,
+    request: Request,
+    db: Session = Depends(get_db),
+):
     article = db.query(Article).filter(Article.id == article_id).first()
     if not article:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Article not found")
+
+    # Capture client IP address (try X-Forwarded-For first for reverse proxy setups)
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        ip_address = forwarded.split(",")[0].strip()
+    else:
+        ip_address = request.client.host if request.client else ""
+
+    user_agent = request.headers.get("user-agent", "")
+
     comment = Comment(
         article_id=article_id,
         author=payload.author,
         content=payload.content,
+        ip_address=ip_address,
+        user_agent=user_agent,
     )
     db.add(comment)
     db.commit()

@@ -1,4 +1,4 @@
-export interface ArticleMeta {
+﻿export interface ArticleMeta {
   id: number;
   title: string;
   summary: string;
@@ -16,6 +16,8 @@ export interface Comment {
   article_id: number;
   author: string;
   content: string;
+  ip_address: string;
+  user_agent: string;
   created_at: string;
 }
 

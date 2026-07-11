@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { api } from "../api";
 import type { ArticleMeta, Comment } from "../types";
 import Sidebar from "../components/Sidebar";
@@ -6,6 +6,43 @@ import Sidebar from "../components/Sidebar";
 interface ArticleDetailProps {
   id: number;
   onBack: () => void;
+}
+
+function parseUA(ua: string): { os: string; browser: string } {
+  let os = "Unknown";
+  let browser = "Unknown";
+
+  if (/Windows NT 10/.test(ua)) os = "Windows 10";
+  else if (/Windows NT 11/.test(ua)) os = "Windows 11";
+  else if (/Windows NT 6\.3/.test(ua)) os = "Windows 8.1";
+  else if (/Windows NT 6\.1/.test(ua)) os = "Windows 7";
+  else if (/Mac OS X/.test(ua)) {
+    const m = ua.match(/Mac OS X (\d+[._]\d+)/);
+    os = m ? `macOS ${m[1].replace("_", ".")}` : "macOS";
+  } else if (/Linux/.test(ua) && !/Android/.test(ua)) os = "Linux";
+  else if (/Android/.test(ua)) {
+    const m = ua.match(/Android (\d+\.?\d*)/);
+    os = m ? `Android ${m[1]}` : "Android";
+  } else if (/iPhone|iPad/.test(ua)) {
+    const m = ua.match(/OS (\d+[._]\d+)/);
+    os = m ? `iOS ${m[1].replace("_", ".")}` : "iOS";
+  }
+
+  if (/Edg\//.test(ua)) {
+    const m = ua.match(/Edg\/(\d+)/);
+    browser = m ? `Edge ${m[1]}` : "Edge";
+  } else if (/Chrome/.test(ua)) {
+    const m = ua.match(/Chrome\/(\d+)/);
+    browser = m ? `Chrome ${m[1]}` : "Chrome";
+  } else if (/Firefox/.test(ua)) {
+    const m = ua.match(/Firefox\/(\d+)/);
+    browser = m ? `Firefox ${m[1]}` : "Firefox";
+  } else if (/Safari/.test(ua)) {
+    const m = ua.match(/Version\/(\d+)/);
+    browser = m ? `Safari ${m[1]}` : "Safari";
+  }
+
+  return { os, browser };
 }
 
 export default function ArticleDetail({ id, onBack }: ArticleDetailProps) {
@@ -125,16 +162,24 @@ export default function ArticleDetail({ id, onBack }: ArticleDetailProps) {
             {comments.length === 0 ? (
               <p className="text-xs text-gray-600 font-mono">// no comments yet. be the first.</p>
             ) : (
-              comments.map((c) => (
-                <div key={c.id} className="border-b border-dark-700 pb-3 last:border-0">
-                  <div className="flex items-center gap-2 text-xs text-gray-500 font-mono mb-1">
-                    <span className="text-neon-purple">@{c.author}</span>
-                    <span>?</span>
-                    <span>{c.created_at?.split("T")[0]}</span>
+              comments.map((c) => {
+                const { os, browser } = parseUA(c.user_agent || "");
+                return (
+                  <div key={c.id} className="border-b border-dark-700 pb-3 last:border-0">
+                    <div className="flex items-center gap-2 text-xs text-gray-500 font-mono mb-1">
+                      <span className="text-neon-purple">@{c.author}</span>
+                      <span>?</span>
+                      <span>{c.created_at?.split("T")[0]}</span>
+                    </div>
+                    <p className="text-xs text-gray-400 font-mono">{c.content}</p>
+                    <div className="flex items-center gap-2 text-[10px] text-gray-600 font-mono mt-1.5">
+                      {c.ip_address && <span>?? {c.ip_address}</span>}
+                      {os !== "Unknown" && <span>?? {os}</span>}
+                      {browser !== "Unknown" && <span>?? {browser}</span>}
+                    </div>
                   </div>
-                  <p className="text-xs text-gray-400 font-mono">{c.content}</p>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 

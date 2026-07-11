@@ -25,9 +25,9 @@
     ports:
       - "8080:80"
     volumes:
-      - /mnt/p:/media/music:ro
+      - /mnt/m:/media/music:ro
       - /mnt/f:/media/movies:ro
-      - /mnt/m:/media/pictures:ro
+      - /mnt/p:/media/pictures:ro
     depends_on:
       backend:
         condition: service_healthy
