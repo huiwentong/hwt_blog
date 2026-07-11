@@ -8,7 +8,7 @@
     ports:
       - "8000:8000"
     volumes:
-      - hwt-data:/app/data
+      - ./data:/app/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
       interval: 10s
@@ -32,5 +32,5 @@
       backend:
         condition: service_healthy
 
-volumes:
-  hwt-data:
+# volumes:
+#   hwt-data:
