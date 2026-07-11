@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker, DeclarativeBase
 import pathlib
 
 # Ensure the data directory exists (works locally and in Docker)
-_db_dir = pathlib.Path(__file__).resolve().parent / "data"
+_db_dir = pathlib.Path(__file__).resolve().parent.parent / "data"
 _db_dir.mkdir(parents=True, exist_ok=True)
 _db_path = _db_dir / "hwt_blog.db"
 
