@@ -1,4 +1,4 @@
-﻿from sqlalchemy import create_engine, event
+﻿from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 import pathlib
 
@@ -13,20 +13,9 @@ engine = create_engine(
     DATABASE_URL,
     connect_args={
         "check_same_thread": False,
-        "timeout": 30,  # Wait up to 30s if database is locked
+        "timeout": 30,
     },
-    pool_pre_ping=True,
 )
-
-
-# Enable WAL mode for better concurrent access
-@event.listens_for(engine, "connect")
-def set_sqlite_pragma(dbapi_connection, connection_record):
-    cursor = dbapi_connection.cursor()
-    cursor.execute("PRAGMA journal_mode=WAL")
-    cursor.execute("PRAGMA busy_timeout=30000")
-    cursor.close()
-
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
