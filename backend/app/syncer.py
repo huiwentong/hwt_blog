@@ -15,10 +15,16 @@ DB_FILE = "hwt_blog.db"
 def _get_watch_dir() -> str | None:
     if os.name == "nt":
         d = WATCH_DIR_WIN
-        return d if os.path.isdir(d) else None
+        if os.path.isdir(d):
+            return d
+        print(f"[syncer] Watch dir not found: {d}")
+        return None
     else:
         d = WATCH_DIR_LINUX
-        return d if os.path.isdir(d) else None
+        if os.path.isdir(d):
+            return d
+        print(f"[syncer] Watch dir not found: {d}")
+        return None
 
 
 def merge_from_shared(backend_db: str) -> bool:
@@ -33,6 +39,7 @@ def merge_from_shared(backend_db: str) -> bool:
     if not os.path.isfile(signal_path):
         return False
     if not os.path.isfile(shared_db):
+        print(f"[syncer] Signal file found but no DB at: {shared_db}")
         return False
 
     now = datetime.now(timezone.utc).isoformat()

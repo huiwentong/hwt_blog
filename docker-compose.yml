@@ -9,6 +9,7 @@
       - "8000:8000"
     volumes:
       - ./backend/data:/app/data
+      - /mnt/z/github/db:/mnt/z/github/db
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
       interval: 10s
