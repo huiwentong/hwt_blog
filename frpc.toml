@@ -19,6 +19,6 @@ name = "my_fastapi_https"
 type = "tcp"
 
 localIP = "127.0.0.1"
-localPort = 443
+localPort = 8443
 
 remotePort = 443

@@ -24,7 +24,7 @@
     restart: unless-stopped
     ports:
       - "8080:80"
-      - "443:443"
+      - "8443:443"
     volumes:
       - /mnt/m:/media/music:ro
       - /mnt/f:/media/movies:ro
