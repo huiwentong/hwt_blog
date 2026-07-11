@@ -10,10 +10,14 @@ async function fetchJSON<T>(url: string): Promise<T> {
 
 export const api = {
   // Articles
-  getArticles: (page = 1, limit = 20) =>
-    fetchJSON<{ items: ArticleMeta[]; total: number; page: number }>(
-      `/articles?page=${page}&limit=${limit}`
-    ),
+  getArticles: (page = 1, limit = 20, category?: string, search?: string) => {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (category) params.set("category", category);
+    if (search) params.set("search", search);
+    return fetchJSON<{ items: ArticleMeta[]; total: number; page: number }>(
+      `/articles?${params}`
+    );
+  },
   getArticle: (id: number) =>
     fetchJSON<ArticleMeta>(`/articles/${id}`),
   getArticlesByCategory: (category: string) =>

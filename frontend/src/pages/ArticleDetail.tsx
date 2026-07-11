@@ -1,6 +1,8 @@
 ﻿import { useState, useEffect } from "react";
 import { api } from "../api";
 import type { ArticleMeta, Comment } from "../types";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import Sidebar from "../components/Sidebar";
 
 interface ArticleDetailProps {
@@ -147,8 +149,8 @@ export default function ArticleDetail({ id, onBack }: ArticleDetailProps) {
           <div className="border-t border-dark-700 my-6" />
 
           {/* Content */}
-          <div className="prose prose-invert max-w-none text-gray-300 text-sm leading-relaxed whitespace-pre-wrap font-mono">
-            {article.content}
+          <div className="prose prose-invert max-w-none text-gray-300 text-sm leading-relaxed font-mono">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{article.content}</ReactMarkdown>
           </div>
         </article>
 

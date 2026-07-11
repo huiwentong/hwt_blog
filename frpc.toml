@@ -13,3 +13,12 @@ localIP = "127.0.0.1"
 localPort = 8080
 
 remotePort = 80
+
+[[proxies]]
+name = "my_fastapi_https"
+type = "tcp"
+
+localIP = "127.0.0.1"
+localPort = 443
+
+remotePort = 443

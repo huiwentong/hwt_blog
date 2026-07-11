@@ -1,4 +1,5 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 
 /* ── Alibaba PuHuiTi Bold (阿里巴巴普惠体加粗) ── */
@@ -105,4 +106,45 @@ body {
     var(--color-accent-dim),
     var(--color-dark-600) 60%
   );
+}
+
+
+/* 鈹€鈹€ Markdown prose overrides for dark terminal theme 鈹€鈹€ */
+.prose {
+  --tw-prose-body: #d1d5db;
+  --tw-prose-headings: #e5e7eb;
+  --tw-prose-links: #00ff41;
+  --tw-prose-bold: #e5e7eb;
+  --tw-prose-code: #b388ff;
+  --tw-prose-pre-bg: #0f0f1a;
+  --tw-prose-pre-code: #d1d5db;
+  --tw-prose-quotes: #9ca3af;
+  --tw-prose-quote-borders: #00ff41;
+  --tw-prose-hr: #2d2d50;
+  --tw-prose-th-borders: #2d2d50;
+  --tw-prose-td-borders: #252540;
+  max-width: none;
+}
+.prose code {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-size: 0.8125em;
+  padding: 0.15em 0.3em;
+  border-radius: 3px;
+  background: rgba(179, 136, 255, 0.1);
+}
+.prose pre {
+  border: 1px solid #2d2d50;
+  border-radius: 6px;
+}
+.prose pre code {
+  padding: 0;
+  background: transparent;
+  font-size: 0.8em;
+}
+.prose img {
+  border-radius: 6px;
+  border: 1px solid #2d2d50;
+}
+.prose blockquote {
+  font-style: normal;
 }

@@ -13,11 +13,19 @@ def list_articles(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
     category: str | None = Query(None),
+    search: str | None = Query(None),
     db: Session = Depends(get_db),
 ):
     q = db.query(Article)
     if category:
         q = q.filter(Article.category == category)
+    if search:
+        like = f"%{search}%"
+        q = q.filter(
+            Article.title.ilike(like)
+            | Article.content.ilike(like)
+            | Article.tags.ilike(like)
+        )
     total = q.count()
     items = q.order_by(Article.created_at.desc()).offset((page - 1) * limit).limit(limit).all()
 
