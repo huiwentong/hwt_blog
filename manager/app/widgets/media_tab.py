@@ -198,9 +198,9 @@ class MediaTab(QWidget):
         segments = [quote(s, safe="") for s in rel.split("/")]
         encoded_path = "/".join(segments)
         mapping = {
-            "P:":  ("music",    f"http://62.234.134.129/music/{encoded_path}"),
-            "X:":  ("movies",   f"http://62.234.134.129/movies/{encoded_path}"),
-            "V:":  ("pictures", f"http://62.234.134.129/pictures/{encoded_path}"),
+            "P:":  ("music",    f"https://62.234.134.129/music/{encoded_path}"),
+            "X:":  ("movies",   f"https://62.234.134.129/movies/{encoded_path}"),
+            "V:":  ("pictures", f"https://62.234.134.129/pictures/{encoded_path}"),
         }
         if drive in mapping:
             return mapping[drive][1]
