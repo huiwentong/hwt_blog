@@ -10,6 +10,6 @@ name = "my_fastapi"
 type = "tcp"
 
 localIP = "127.0.0.1"
-localPort = 5173
+localPort = 8080
 
 remotePort = 80
