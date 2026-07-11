@@ -31,7 +31,7 @@ Rust 的所有权系统在编译时保证了内存安全，无需垃圾回收器
 
 借用（borrowing）是通过引用（reference）来实现的。引用允许你访问值而不获取其所有权。
 
-\`\`\`rust
+```rust
 fn main() {
     let s = String::from("hello");
     let len = calculate_length(&s);
@@ -41,17 +41,17 @@ fn main() {
 fn calculate_length(s: &String) -> usize {
     s.len()
 }
-\`\`\`
+```
 
 ## 生命周期
 
 生命周期是 Rust 用来确保引用始终有效的机制。生命周期注解描述了多个引用之间的关系。
 
-\`\`\`rust
+```rust
 fn longest<\'a>(x: &\'a str, y: &\'a str) -> &\'a str {
     if x.len() > y.len() { x } else { y }
 }
-\`\`\`
+```
 
 ## 总结
 
