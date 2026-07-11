@@ -24,6 +24,9 @@ def run_migration():
             conn.execute(text("ALTER TABLE comments ADD COLUMN ip_address VARCHAR(45) DEFAULT ''"))
         if "user_agent" not in cols:
             conn.execute(text("ALTER TABLE comments ADD COLUMN user_agent TEXT DEFAULT ''"))
+
+        # Fix NULL created_at in media
+        conn.execute(text("UPDATE media SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"))
         conn.commit()
     finally:
         conn.close()

@@ -159,9 +159,10 @@ class DbManager:
     ) -> int:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
+        now = datetime.now(timezone.utc).isoformat()
         cursor.execute(
-            "INSERT INTO media (title, type, description, url, cover) VALUES (?, ?, ?, ?, ?)",
-            (title, type_, description, url, cover),
+            "INSERT INTO media (title, type, description, url, cover, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (title, type_, description, url, cover, now),
         )
         conn.commit()
         new_id = cursor.lastrowid

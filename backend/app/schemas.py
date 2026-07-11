@@ -70,7 +70,7 @@ class MediaResponse(BaseModel):
     description: str
     url: str
     cover: str
-    created_at: datetime
+    created_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 
