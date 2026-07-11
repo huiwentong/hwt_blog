@@ -37,11 +37,21 @@ class MediaTab(QWidget):
         self.desc_input.setPlaceholderText("媒体描述（可选）")
         self.desc_input.setMaximumHeight(80)
 
+        url_row = QHBoxLayout()
         self.url_input = QLineEdit()
-        self.url_input.setPlaceholderText("链接 URL（可选）")
+        self.url_input.setPlaceholderText("链接 URL（可选，点击浏览选择文件自动转换）")
+        self.url_browse_btn = QPushButton("浏览…")
+        self.url_browse_btn.clicked.connect(self._browse_url)
+        url_row.addWidget(self.url_input, 1)
+        url_row.addWidget(self.url_browse_btn)
 
+        cover_row = QHBoxLayout()
         self.cover_input = QLineEdit()
-        self.cover_input.setPlaceholderText("封面图片 URL（可选）")
+        self.cover_input.setPlaceholderText("封面图片 URL（可选，点击浏览选择文件自动转换）")
+        self.cover_browse_btn = QPushButton("浏览…")
+        self.cover_browse_btn.clicked.connect(self._browse_cover)
+        cover_row.addWidget(self.cover_input, 1)
+        cover_row.addWidget(self.cover_browse_btn)
 
         row1 = QHBoxLayout()
         row1.addWidget(QLabel("类型:"))
@@ -55,8 +65,8 @@ class MediaTab(QWidget):
         form_layout.addLayout(row1)
         form_layout.addWidget(QLabel("描述:"))
         form_layout.addWidget(self.desc_input)
-        form_layout.addWidget(self.url_input)
-        form_layout.addWidget(self.cover_input)
+        form_layout.addLayout(url_row)
+        form_layout.addLayout(cover_row)
 
         self.feedback_label = QLabel()
         self.feedback_label.setWordWrap(True)
@@ -132,6 +142,7 @@ class MediaTab(QWidget):
             if reply == QMessageBox.Yes:
                 try:
                     self.db.delete_media(record_id)
+                    self.db.signal_sync()
                     self._refresh_table()
                     QMessageBox.information(self, "完成", "媒体已删除。")
                 except Exception as e:
@@ -160,6 +171,7 @@ class MediaTab(QWidget):
 
         try:
             self.db.add_media(title, type_, desc, url, cover)
+            self.db.signal_sync()
             parts.append("<span style='color:#00ff41'>✓ 媒体添加成功！</span>")
             self.feedback_label.setText("<br>".join(parts))
             self._clear_form()
@@ -174,6 +186,133 @@ class MediaTab(QWidget):
         self.cover_input.clear()
         self.type_combo.setCurrentIndex(0)
         self.feedback_label.clear()
+
+    def _local_path_to_url(self, file_path: str) -> str:
+        """Convert a local Windows drive path to the public server URL."""
+        import os
+        from urllib.parse import quote
+        drive = os.path.splitdrive(file_path)[0].upper()
+        # Get the relative path from the drive root (strip drive letter + colon + separator)
+        rel = file_path[len(drive):].lstrip("\\/").replace("\\", "/")
+        # URL-encode each path segment to handle Chinese/special characters
+        segments = [quote(s, safe="") for s in rel.split("/")]
+        encoded_path = "/".join(segments)
+        mapping = {
+            "P:":  ("music",    f"http://62.234.134.129/music/{encoded_path}"),
+            "X:":  ("movies",   f"http://62.234.134.129/movies/{encoded_path}"),
+            "V:":  ("pictures", f"http://62.234.134.129/pictures/{encoded_path}"),
+        }
+        if drive in mapping:
+            return mapping[drive][1]
+        # Unknown drive — fall back to URL-encoded forward-slash path
+        return quote(file_path.replace("\\", "/"), safe="/")
+
+    def _create_thumbnail(self, file_path: str, max_size: int = 400) -> str | None:
+        """Generate a thumbnail image next to the original file. Returns thumbnail path or None."""
+        from PySide6.QtGui import QImage
+        import os
+        # Only create thumbnails for image files
+        ext = os.path.splitext(file_path)[1].lower()
+        if ext not in (".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"):
+            return None
+        img = QImage(file_path)
+        if img.isNull():
+            return None
+        thumb = img.scaled(max_size, max_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        thumb_path = os.path.splitext(file_path)[0] + "_thumb.jpg"
+        if not thumb.save(thumb_path, "JPEG", quality=85):
+            return None
+        return thumb_path
+
+    def _browse_url(self):
+        """Open file dialog for media and auto-fill URL + type."""
+        from PySide6.QtWidgets import QFileDialog
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "选择媒体文件", "",
+            "所有媒体 (*.mp3 *.wav *.flac *.mp4 *.mkv *.avi *.mov *.jpg *.jpeg *.png *.gif *.webp);;所有文件 (*)",
+        )
+        if not file_path:
+            return
+
+        url = self._local_path_to_url(file_path)
+        self.url_input.setText(url)
+
+        # Auto-detect media type from drive letter
+        import os
+        drive = os.path.splitdrive(file_path)[0].upper()
+        drive_type_map = {"P:": "music", "X:": "movie", "V:": "photo"}
+        if drive in drive_type_map:
+            detected = drive_type_map[drive]
+            for i in range(self.type_combo.count()):
+                if self.type_combo.itemData(i) == detected:
+                    self.type_combo.setCurrentIndex(i)
+                    break
+
+        # Auto-fill title from filename
+        base = os.path.splitext(os.path.basename(file_path))[0]
+        if not self.title_input.text():
+            self.title_input.setText(base)
+
+        # Auto-generate thumbnail for image files and fill cover field
+        thumb_path = self._create_thumbnail(file_path, 400)
+        if thumb_path:
+            cover_url = self._local_path_to_url(thumb_path)
+            self.cover_input.setText(cover_url)
+
+        # Auto-generate compressed preview + thumbnail for video files (any type)
+        ext = os.path.splitext(file_path)[1].lower()
+        if ext in (".mp4", ".mkv", ".avi", ".mov", ".webm"):
+            import subprocess
+
+            # 1. Compressed preview (muted, low-res)
+            preview_path = os.path.splitext(file_path)[0] + "_preview" + ext
+            if not os.path.exists(preview_path):
+                try:
+                    subprocess.run(
+                        ["ffmpeg", "-i", file_path,
+                         "-vf", "scale=480:-2",
+                         "-c:v", "libx264", "-preset", "fast",
+                         "-crf", "35", "-an",
+                         "-y", preview_path],
+                        capture_output=True, timeout=120, check=True,
+                    )
+                except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+                    pass  # ffmpeg not available or encode failed — skip gracefully
+
+            # 2. Thumbnail frame (first frame as cover image)
+            thumb_path = os.path.splitext(file_path)[0] + "_thumb.jpg"
+            if not os.path.exists(thumb_path):
+                try:
+                    subprocess.run(
+                        ["ffmpeg", "-i", file_path,
+                         "-vframes", "1",
+                         "-vf", "scale=400:-2",
+                         "-y", thumb_path],
+                        capture_output=True, timeout=30, check=True,
+                    )
+                    thumb_url = self._local_path_to_url(thumb_path)
+                    self.cover_input.setText(thumb_url)
+                except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+                    pass  # skip gracefully
+
+    def _browse_cover(self):
+        """Open file dialog for cover image."""
+        from PySide6.QtWidgets import QFileDialog
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "选择封面图片", "",
+            "图片 (*.jpg *.jpeg *.png *.gif *.webp *.bmp);;所有文件 (*)",
+        )
+        if not file_path:
+            return
+
+        url = self._local_path_to_url(file_path)
+        self.cover_input.setText(url)
+
+        # Auto-generate thumbnail for selected cover image
+        thumb_path = self._create_thumbnail(file_path, 400)
+        if thumb_path:
+            thumb_url = self._local_path_to_url(thumb_path)
+            self.cover_input.setText(thumb_url)
 
     def _refresh_table(self):
         rows = self.db.get_recent_media()

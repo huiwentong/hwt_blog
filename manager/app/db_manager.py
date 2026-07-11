@@ -210,6 +210,18 @@ class DbManager:
         conn.commit()
         conn.close()
         return deleted
+    def signal_sync(self):
+        """Create sync signal file for the backend watcher."""
+        import os
+        signal_dir = "Z:/github/db"
+        if os.path.isdir(signal_dir):
+            signal_file = os.path.join(signal_dir, "new.txt")
+            try:
+                with open(signal_file, "w") as f:
+                    f.write("sync")
+            except Exception:
+                pass  # ignore if Z: is not available
+
     def get_stats(self) -> dict:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()

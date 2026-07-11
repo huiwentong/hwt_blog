@@ -148,3 +148,20 @@ body {
 .prose blockquote {
   font-style: normal;
 }
+
+/* 鈹€鈹€ Image loading shimmer placeholder 鈹€鈹€ */
+.img-placeholder {
+  background: linear-gradient(
+    90deg,
+    var(--color-dark-800) 25%,
+    var(--color-dark-700) 50%,
+    var(--color-dark-800) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

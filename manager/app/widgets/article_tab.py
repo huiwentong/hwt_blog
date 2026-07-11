@@ -129,6 +129,7 @@ class ArticleTab(QWidget):
             if reply == QMessageBox.Yes:
                 try:
                     self.db.delete_article(record_id)
+                    self.db.signal_sync()
                     self._refresh_table()
                     QMessageBox.information(self, "完成", "文章已删除。")
                 except Exception as e:
@@ -157,6 +158,7 @@ class ArticleTab(QWidget):
 
         try:
             self.db.add_article(title, summary, content, category, tags)
+            self.db.signal_sync()
             parts.append("<span style='color:#00ff41'>✓ 文章发布成功！</span>")
             self.feedback_label.setText("<br>".join(parts))
             self._clear_form()

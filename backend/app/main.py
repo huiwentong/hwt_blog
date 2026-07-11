@@ -8,6 +8,7 @@ from app.database import engine, get_db, Base
 from app.routers import articles, comments, tools, media
 from app.schemas import SiteInfoResponse, CategoryCount
 from app.models import Article, Comment
+from app.syncer import merge_from_shared, get_db_path
 
 
 def run_migration():
@@ -36,6 +37,24 @@ def run_migration():
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     run_migration()
+
+    # Start background DB syncer thread
+    import threading
+    db_path = get_db_path()
+
+    def _watch_loop():
+        import time
+        while True:
+            try:
+                if merge_from_shared(db_path):
+                    print("[syncer] Database merged from shared folder")
+            except Exception:
+                pass
+            time.sleep(5)
+
+    watcher = threading.Thread(target=_watch_loop, daemon=True)
+    watcher.start()
+    print(f"[syncer] Watching for DB sync signals every 5s")
     yield
 
 

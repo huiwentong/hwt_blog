@@ -15,9 +15,7 @@ from app.widgets.tool_tab import ToolTab
 from app.widgets.media_tab import MediaTab
 
 
-DEFAULT_DB = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "..", "backend", "hwt_blog.db")
-)
+DEFAULT_DB = os.path.abspath('Z:/github/db/hwt_blog.db')
 
 
 class MainWindow(QMainWindow):
