@@ -1,7 +1,13 @@
 ﻿from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
+import pathlib
 
-DATABASE_URL = "sqlite:///./data/hwt_blog.db"
+# Ensure the data directory exists (works locally and in Docker)
+_db_dir = pathlib.Path(__file__).resolve().parent.parent / "data"
+_db_dir.mkdir(parents=True, exist_ok=True)
+_db_path = _db_dir / "hwt_blog.db"
+
+DATABASE_URL = f"sqlite:///{_db_path.as_posix()}"
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
