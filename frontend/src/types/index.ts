@@ -40,6 +40,12 @@ export interface MediaItem {
   created_at: string;
 }
 
+export interface MediaListResponse {
+  items: MediaItem[];
+  total: number;
+  page: number;
+}
+
 export interface CategoryCount {
   category: string;
   count: number;

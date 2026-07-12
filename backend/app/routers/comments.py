@@ -1,8 +1,9 @@
-﻿from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Comment, Article
 from app.schemas import CommentCreate, CommentResponse
+from app.syncer import sync_comment_to_shared
 
 router = APIRouter(prefix="/articles/{article_id}/comments", tags=["comments"])
 
@@ -30,7 +31,7 @@ def create_comment(
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Article not found")
 
-    # Capture client IP address (try X-Forwarded-For first for reverse proxy setups)
+    # Capture client IP address
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
         ip_address = forwarded.split(",")[0].strip()
@@ -49,4 +50,15 @@ def create_comment(
     db.add(comment)
     db.commit()
     db.refresh(comment)
+
+    # Sync comment to shared Z drive DB (best-effort, won't break the response)
+    sync_comment_to_shared(
+        article_id=article_id,
+        author=payload.author,
+        content=payload.content,
+        ip_address=ip_address,
+        user_agent=user_agent,
+        created_at=comment.created_at.isoformat() if comment.created_at else None,
+    )
+
     return comment

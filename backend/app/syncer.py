@@ -135,3 +135,53 @@ def merge_from_shared(backend_db: str) -> bool:
 def get_db_path() -> str:
     _db_dir = pathlib.Path(__file__).resolve().parent.parent / "data"
     return str(_db_dir / "hwt_blog.db")
+
+def sync_comment_to_shared(
+    article_id: int,
+    author: str,
+    content: str,
+    ip_address: str = "",
+    user_agent: str = "",
+    created_at: str | None = None,
+) -> bool:
+    """After a comment is created locally, push it to the shared manager DB."""
+    watch_dir = _get_watch_dir()
+    if not watch_dir:
+        return False
+
+    shared_db = os.path.join(watch_dir, DB_FILE)
+    if not os.path.isfile(shared_db):
+        print(f"[sync-comment] Shared DB not found at: {shared_db}")
+        return False
+
+    try:
+        conn = sqlite3.connect(shared_db, timeout=10)
+        cur = conn.cursor()
+        cur.execute("PRAGMA journal_mode=WAL")
+
+        # Ensure the table exists (schema may differ from backend)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS comments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                article_id INTEGER NOT NULL,
+                author VARCHAR(50) NOT NULL,
+                content TEXT NOT NULL,
+                ip_address VARCHAR(45) DEFAULT '',
+                user_agent TEXT DEFAULT '',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        cur.execute(
+            """INSERT INTO comments (article_id, author, content, ip_address, user_agent, created_at)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (article_id, author, content, ip_address, user_agent, created_at),
+        )
+        conn.commit()
+        conn.close()
+        print(f"[sync-comment] Comment synced to shared DB (article={article_id})")
+        return True
+
+    except Exception as e:
+        print(f"[sync-comment] Failed: {e}")
+        return False

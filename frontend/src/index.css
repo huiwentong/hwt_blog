@@ -1,8 +1,8 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
 
-/* ── Alibaba PuHuiTi Bold (阿里巴巴普惠体加粗) ── */
+/* 鈹€鈹€ Alibaba PuHuiTi Bold 鈹€鈹€ */
 @font-face {
   font-family: 'Alibaba PuHuiTi';
   src: url('./assets/AlibabaPuHuiTi-3-85-Bold.ttf') format('truetype');
@@ -108,7 +108,6 @@ body {
   );
 }
 
-
 /* 鈹€鈹€ Markdown prose overrides for dark terminal theme 鈹€鈹€ */
 .prose {
   --tw-prose-body: #d1d5db;
@@ -164,4 +163,51 @@ body {
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+/* 鈹€鈹€ Jigsaw Masonry (CSS Grid + dense flow + variable spans) 鈹€鈹€ */
+.masonry-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 0.75rem;
+  grid-auto-flow: dense;
+  grid-auto-rows: 280px;
+}
+
+@media (min-width: 640px) {
+  .masonry-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1024px) {
+  .masonry-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 1280px) {
+  .masonry-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Each item fills its cell 鈥?card uses object-cover */
+.masonry-item {
+  overflow: hidden;
+  border-radius: 0.5rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.masonry-item:hover {
+  transform: translateY(-2px);
+}
+
+/* 鈹€鈹€ Span classes 鈥?create the jigsaw puzzle effect 鈹€鈹€ */
+.grid-span-wide {
+  grid-column: span 2;
+}
+
+.grid-span-tall {
+  grid-row: span 2;
+}
+
+.grid-span-xtall {
+  grid-row: span 3;
+}
+
+.grid-span-featured {
+  grid-column: span 2;
+  grid-row: span 2;
 }

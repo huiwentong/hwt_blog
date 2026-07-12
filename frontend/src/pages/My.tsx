@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { api } from "../api";
 import type { MediaItem } from "../types";
 
@@ -6,15 +6,15 @@ type MediaFilter = "all" | "music" | "photo" | "movie";
 
 const filters: { key: MediaFilter; label: string }[] = [
   { key: "all", label: "ALL" },
-  { key: "music", label: "? MUSIC" },
-  { key: "photo", label: "? PHOTO" },
-  { key: "movie", label: "? MOVIE" },
+  { key: "music", label: "♪ MUSIC" },
+  { key: "photo", label: "◷ PHOTO" },
+  { key: "movie", label: "▶ MOVIE" },
 ];
 
 const typeIcons: Record<string, string> = {
-  music: "?",
-  photo: "?",
-  movie: "?",
+  music: "♪",
+  photo: "◷",
+  movie: "▶",
 };
 
 const videoExts = [".mp4", ".mkv", ".avi", ".mov", ".webm"];
@@ -30,19 +30,88 @@ function previewUrl(url: string): string {
   return url.slice(0, dot) + "_preview" + url.slice(dot);
 }
 
+const PAGE_SIZE = 20;
+
+const defaultRatios: Record<string, number> = {
+  music: 1,
+  photo: 4 / 3,
+  movie: 16 / 9,
+};
+
+function spanClass(ar: number | undefined, type: string, idx: number): string {
+  const r = ar || defaultRatios[type] || 1;
+  if (r > 2.0) return "grid-span-featured";
+  if (r > 1.5) return "grid-span-wide";
+  if (r < 0.55) return "grid-span-xtall";
+  if (r < 0.75) return "grid-span-tall";
+  if (idx > 0 && idx % 4 === 0) return "grid-span-tall";
+  if (idx > 0 && idx % 7 === 0) return "grid-span-featured";
+  return "";
+}
+
 export default function My() {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [filter, setFilter] = useState<MediaFilter>("all");
   const [selected, setSelected] = useState<MediaItem | null>(null);
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [failedPreviews, setFailedPreviews] = useState<Set<number>>(new Set());
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [aspectRatios, setAspectRatios] = useState<Record<number, number>>({});
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef(false);
+
+  const fetchMedia = useCallback(async (pageNum: number, mediaFilter: MediaFilter, append: boolean) => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
+    setLoading(true);
+    try {
+      const type = mediaFilter === "all" ? undefined : mediaFilter;
+      const res = await api.getMedia(type, pageNum, PAGE_SIZE);
+      if (res && Array.isArray(res.items)) {
+        if (append) {
+          setMedia(prev => [...prev, ...res.items]);
+        } else {
+          setMedia(res.items);
+        }
+        setTotal(res.total);
+        setPage(pageNum);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+      setInitialLoading(false);
+      loadingRef.current = false;
+    }
+  }, []);
 
   useEffect(() => {
-    const type = filter === "all" ? undefined : filter;
-    api.getMedia(type).then(setMedia).catch(() => {});
-  }, [filter]);
+    setInitialLoading(true);
+    setMedia([]);
+    setPage(1);
+    setAspectRatios({});
+    fetchMedia(1, filter, false);
+  }, [filter, fetchMedia]);
 
-  // Close modal on Escape key
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && !loadingRef.current && media.length < total) {
+          fetchMedia(page + 1, filter, true);
+        }
+      },
+      { rootMargin: "400px" }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [media.length, total, page, filter, fetchMedia]);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") setSelected(null);
@@ -51,15 +120,22 @@ export default function My() {
     return () => document.removeEventListener("keydown", handler);
   }, []);
 
-  // Pause hovered video when modal opens
   useEffect(() => {
     if (selected) setHoveredId(null);
   }, [selected]);
 
+  const handleMediaLoad = (id: number, w: number, h: number) => {
+    if (w && h) {
+      setAspectRatios(prev => ({ ...prev, [id]: w / h }));
+    }
+  };
+
+  const remaining = total - media.length;
+
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
-        <span className="text-accent font-mono text-lg">? MY SPACE</span>
+        <span className="text-accent font-mono text-lg">◈ MY SPACE</span>
         <div className="flex-1 h-px bg-dark-700" />
       </div>
 
@@ -69,7 +145,6 @@ export default function My() {
         </p>
       </section>
 
-      {/* Filter tabs */}
       <div className="flex flex-wrap gap-2 mb-6">
         {filters.map((f) => (
           <button
@@ -86,87 +161,117 @@ export default function My() {
         ))}
       </div>
 
-      {media.length === 0 ? (
+      {initialLoading ? (
         <div className="text-center py-20">
-          <div className="text-5xl mb-4 text-dark-600">?</div>
+          <div className="text-5xl mb-4 text-dark-600">◌</div>
+          <p className="text-gray-600 font-mono text-sm">// Loading...</p>
+        </div>
+      ) : media.length === 0 ? (
+        <div className="text-center py-20">
+          <div className="text-5xl mb-4 text-dark-600">◇</div>
           <p className="text-gray-600 font-mono text-sm">// No media shared yet.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {media.map((item) => {
-            const isHovered = hoveredId === item.id && !failedPreviews.has(item.id);
-            const vidPreview = item.url && isVideo(item.url);
-            return (
-              <div
-                key={item.id}
-                className="terminal-card rounded-lg overflow-hidden group cursor-pointer relative"
-                onClick={() => setSelected(item)}
-                onMouseEnter={() => setHoveredId(item.id)}
-                onMouseLeave={() => setHoveredId(null)}
-              >
-                <div className="aspect-video bg-dark-800 flex items-center justify-center text-4xl text-dark-600 overflow-hidden relative">
-                  {isVideo(item.url || "") && !item.cover && (
-                    <div className="absolute inset-0 flex items-center justify-center z-10">
-                      <span className="text-5xl opacity-60">{typeIcons.movie}</span>
-                    </div>
-                  )}
+        <>
+          <div className="masonry-grid">
+            {media.map((item, idx) => {
+              const ar = aspectRatios[item.id];
+              const sc = spanClass(ar, item.type, idx);
+              const isHovered = hoveredId === item.id && !failedPreviews.has(item.id);
+              const vidPreview = item.url && isVideo(item.url);
+              const hasCover = !!item.cover;
 
-                  {isHovered && vidPreview ? (
-                    <video
-                      src={previewUrl(item.url)}
-                      muted
-                      autoPlay
-                      loop
-                      playsInline
-                      className="w-full h-full object-cover"
-                      onError={() => {
-                        setFailedPreviews((prev) => new Set(prev).add(item.id));
-                      }}
-                    />
-                  ) : item.cover ? (
-                    <div className="w-full h-full img-placeholder">
+              return (
+                <div
+                  key={item.id}
+                  className={`masonry-item ${sc}`}
+                  onClick={() => setSelected(item)}
+                  onMouseEnter={() => setHoveredId(item.id)}
+                  onMouseLeave={() => setHoveredId(null)}
+                >
+                  <div className="w-full h-full relative rounded-lg overflow-hidden bg-dark-800 terminal-card">
+                    {hasCover ? (
                       <img
                         src={item.cover}
                         alt={item.title}
                         loading="lazy"
                         decoding="async"
-                        className="w-full h-full object-cover"
+                        className={`w-full h-full object-cover transition-opacity duration-300 ${
+                          isHovered && vidPreview ? "opacity-0" : "opacity-100"
+                        }`}
+                        onLoad={(e) => {
+                          const img = e.currentTarget;
+                          handleMediaLoad(item.id, img.naturalWidth, img.naturalHeight);
+                        }}
                       />
-                    </div>
-                  ) : (
-                    <span>{typeIcons[item.type] || "?"}</span>
-                  )}
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-dark-600 gap-2">
+                        <span className="text-5xl">{typeIcons[item.type] || "◇"}</span>
+                        <span className="text-[10px] font-mono uppercase tracking-widest opacity-50">
+                          {item.type}
+                        </span>
+                      </div>
+                    )}
 
-                  {/* Play overlay for movies */}
-                  {vidPreview && !isHovered && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="text-4xl">?</span>
+                    {vidPreview && (
+                      <video
+                        src={previewUrl(item.url)}
+                        muted
+                        autoPlay
+                        loop
+                        playsInline
+                        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
+                          isHovered ? "opacity-100" : "opacity-0 pointer-events-none"
+                        }`}
+                        onError={() => setFailedPreviews(prev => new Set(prev).add(item.id))}
+                        onLoadedMetadata={(e) => {
+                          const v = e.currentTarget;
+                          handleMediaLoad(item.id, v.videoWidth, v.videoHeight);
+                        }}
+                      />
+                    )}
+
+                    <div className="absolute top-2 left-2 z-20">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-dark-900/80 text-neon-blue font-mono backdrop-blur-sm">
+                        {item.type}
+                      </span>
                     </div>
-                  )}
-                </div>
-                <div className="p-4">
-                  <h3 className="text-sm font-bold text-gray-100 font-mono group-hover:text-accent transition-colors">
-                    {item.title}
-                  </h3>
-                  <p className="text-xs text-gray-500 font-mono mt-1 line-clamp-2">
-                    {item.description}
-                  </p>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-xs px-1.5 py-0.5 rounded bg-dark-700 text-neon-blue font-mono">
-                      {item.type}
-                    </span>
-                    <span className="text-xs text-gray-600 font-mono">
-                      {item.created_at?.split("T")[0]}
-                    </span>
+
+                    <div className="absolute bottom-0 left-0 right-0 z-20 p-2.5 bg-gradient-to-t from-dark-950/95 via-dark-950/60 to-transparent pointer-events-none">
+                      <h3 className="text-[11px] font-mono text-gray-200 leading-tight line-clamp-1">
+                        {item.title}
+                      </h3>
+                      <div className="flex items-center justify-between mt-0.5">
+                        <span className="text-[10px] text-gray-400 font-mono">
+                          {item.created_at?.split("T")[0]}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
+              );
+            })}
+          </div>
+
+          <div ref={sentinelRef} className="w-full py-8 flex justify-center">
+            {loading && (
+              <div className="flex items-center gap-2 text-gray-500 font-mono text-xs">
+                <span className="inline-block w-3 h-3 border border-accent border-t-transparent rounded-full animate-spin" />
+                loading...
               </div>
-            );
-          })}
-        </div>
+            )}
+            {!loading && remaining > 0 && (
+              <span className="text-gray-600 font-mono text-xs">
+                ↓ scroll for more ({remaining} left)
+              </span>
+            )}
+            {remaining <= 0 && !loading && (
+              <span className="text-gray-600 font-mono text-xs">— end —</span>
+            )}
+          </div>
+        </>
       )}
 
-      {/* Detail Modal */}
       {selected && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
@@ -176,10 +281,9 @@ export default function My() {
             className="terminal-card rounded-lg w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-dark-700">
               <div className="flex items-center gap-2">
-                <span className="text-2xl">{typeIcons[selected.type] || "?"}</span>
+                <span className="text-2xl">{typeIcons[selected.type] || "◇"}</span>
                 <span className="text-xs text-accent font-mono">// detail</span>
               </div>
               <button
@@ -190,80 +294,44 @@ export default function My() {
               </button>
             </div>
 
-            {/* Media Player / Cover */}
             <div className="bg-dark-900">
               {selected.type === "music" && selected.url && !isVideo(selected.url) && (
                 <div className="p-6 flex flex-col items-center gap-4">
                   <span className="text-6xl">{typeIcons.music}</span>
-                  <audio
-                    controls
-                    autoPlay
-                    className="w-full max-w-md"
-                    src={selected.url}
-                  >
-                    您的浏览器不支持音频播放。
-                  </audio>
+                  <audio controls autoPlay className="w-full max-w-md" src={selected.url} />
                 </div>
               )}
-
               {(selected.type === "movie" || (selected.url && isVideo(selected.url))) && (
                 <div className="w-full">
-                  <video
-                    controls
-                    autoPlay
-                    className="w-full max-h-[60vh] object-contain bg-black"
-                    src={selected.url}
-                  >
-                    您的浏览器不支持视频播放。
-                  </video>
+                  <video controls autoPlay className="w-full max-h-[60vh] object-contain bg-black" src={selected.url} />
                 </div>
               )}
-
               {selected.type === "photo" && selected.cover && !isVideo(selected.url || "") && (
                 <div className="w-full">
                   <div className="w-full img-placeholder">
-                    <img
-                      src={selected.cover}
-                      alt={selected.title}
-                      className="w-full max-h-[60vh] object-contain"
-                    />
+                    <img src={selected.cover} alt={selected.title} className="w-full max-h-[60vh] object-contain" />
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Body */}
             <div className="p-4 space-y-4">
               <div>
                 <h2 className="text-lg font-bold text-gray-100 font-mono">{selected.title}</h2>
-                <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded bg-dark-700 text-neon-blue font-mono">
-                  {selected.type}
-                </span>
+                <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded bg-dark-700 text-neon-blue font-mono">{selected.type}</span>
               </div>
-
               {selected.description && (
                 <div>
                   <div className="text-[10px] text-gray-600 font-mono mb-1">// description</div>
                   <p className="text-sm text-gray-400 font-mono leading-relaxed">{selected.description}</p>
                 </div>
               )}
-
               {selected.url && (
                 <div>
-                  <div className="text-[10px] text-gray-600 font-mono mb-1">
-                    {selected.url !== selected.cover ? "// source" : "// url"}
-                  </div>
-                  <a
-                    href={selected.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-accent font-mono underline break-all hover:text-accent-dim transition-colors"
-                  >
-                    {selected.url}
-                  </a>
+                  <div className="text-[10px] text-gray-600 font-mono mb-1">{selected.url !== selected.cover ? "// source" : "// url"}</div>
+                  <a href={selected.url} target="_blank" rel="noopener noreferrer" className="text-xs text-accent font-mono underline break-all hover:text-accent-dim transition-colors">{selected.url}</a>
                 </div>
               )}
-
               <div className="flex items-center gap-4 text-[10px] text-gray-600 font-mono pt-2 border-t border-dark-700">
                 <span>id: {selected.id}</span>
                 <span>date: {selected.created_at?.split("T")[0]}</span>

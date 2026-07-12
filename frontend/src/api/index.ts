@@ -1,4 +1,4 @@
-import type { ArticleMeta, Comment, ToolItem, MediaItem, SiteInfo } from "../types";
+﻿import type { ArticleMeta, Comment, ToolItem, MediaItem, MediaListResponse, SiteInfo } from "../types";
 
 const API_BASE = "/api";
 
@@ -37,8 +37,11 @@ export const api = {
   getTools: () => fetchJSON<ToolItem[]>("/tools"),
 
   // Media
-  getMedia: (type?: string) =>
-    fetchJSON<MediaItem[]>(type ? `/media?type=${type}` : "/media"),
+  getMedia: (type?: string, page = 1, limit = 20) => {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (type) params.set("type", type);
+    return fetchJSON<MediaListResponse>(`/media?${params}`);
+  },
 
   // Site info
   getSiteInfo: () => fetchJSON<SiteInfo>("/site-info"),

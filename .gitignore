@@ -4,6 +4,7 @@ dist/
 __pycache__/
 *.pyc
 *.db
+*.db-*
 .env
 .DS_Store
 Thumbs.db

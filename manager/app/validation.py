@@ -29,15 +29,15 @@ def validate_article(
     result = ValidationResult()
 
     if not title.strip():
-        result.add_error("【标题】不能为空")
+        result.add_error("銆愭爣棰樸€戜笉鑳戒负绌?)
     if not summary.strip():
-        result.add_error("【摘要】不能为空")
+        result.add_error("銆愭憳瑕併€戜笉鑳戒负绌?)
     if not content.strip():
-        result.add_error("【正文】不能为空")
+        result.add_error("銆愭鏂囥€戜笉鑳戒负绌?)
     if not category.strip():
-        result.add_error("【分类】不能为空，请选择一个分类")
+        result.add_error("銆愬垎绫汇€戜笉鑳戒负绌猴紝璇烽€夋嫨涓€涓垎绫?)
     if not tags.strip():
-        result.add_warning("【标签】未填写，建议添加标签以便检索")
+        result.add_warning("銆愭爣绛俱€戞湭濉啓锛屽缓璁坊鍔犳爣绛句互渚挎绱?)
 
     return result
 
@@ -51,15 +51,15 @@ def validate_tool(
     result = ValidationResult()
 
     if not name.strip():
-        result.add_error("【工具名称】不能为空")
+        result.add_error("銆愬伐鍏峰悕绉般€戜笉鑳戒负绌?)
     if not description.strip():
-        result.add_error("【工具描述】不能为空")
+        result.add_error("銆愬伐鍏锋弿杩般€戜笉鑳戒负绌?)
     if not url.strip():
-        result.add_error("【工具链接】不能为空")
+        result.add_error("銆愬伐鍏烽摼鎺ャ€戜笉鑳戒负绌?)
     elif not url.startswith(("http://", "https://")):
-        result.add_warning("【工具链接】建议以 http:// 或 https:// 开头")
+        result.add_warning("銆愬伐鍏烽摼鎺ャ€戝缓璁互 http:// 鎴?https:// 寮€澶?)
     if not category.strip():
-        result.add_error("【工具分类】不能为空，请选择一个分类")
+        result.add_error("銆愬伐鍏峰垎绫汇€戜笉鑳戒负绌猴紝璇烽€夋嫨涓€涓垎绫?)
 
     return result
 
@@ -71,8 +71,8 @@ def validate_media(
     result = ValidationResult()
 
     if not title.strip():
-        result.add_error("【媒体标题】不能为空")
+        result.add_error("銆愬獟浣撴爣棰樸€戜笉鑳戒负绌?)
     if not type_:
-        result.add_error("【媒体类型】不能为空，请选择一个类型")
+        result.add_error("銆愬獟浣撶被鍨嬨€戜笉鑳戒负绌猴紝璇烽€夋嫨涓€涓被鍨?)
 
     return result

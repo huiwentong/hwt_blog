@@ -1,4 +1,4 @@
-﻿from datetime import datetime
+from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional
 
@@ -73,6 +73,12 @@ class MediaResponse(BaseModel):
     created_at: datetime | None = None
 
     model_config = {"from_attributes": True}
+
+
+class MediaListResponse(BaseModel):
+    items: list[MediaResponse]
+    total: int
+    page: int
 
 
 # ── Site Info ──

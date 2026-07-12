@@ -25,7 +25,7 @@ export default function Home({ onNavigate }: HomeProps) {
             $ SYSTEM_INIT — HWT BLOG v1.0
           </div>
           <h1 className="text-3xl md:text-4xl font-bold font-mono tracking-tight text-gray-100 mb-3">
-            <span className="text-accent">HWT</span> — <span className="font-alibaba">惠文通的小屋</span>
+            <span className="text-accent">HWT</span> — <span className="font-alibaba">惠文通的代码世界</span>
           </h1>
           <p className="text-gray-500 font-mono text-sm leading-relaxed max-w-2xl">
             &gt; 代码、文字、音乐与电影的聚合体。<br />
