@@ -15,15 +15,16 @@ function Waveform({ analyser, isPlaying }: { analyser: AnalyserNode | null; isPl
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !analyser) return;
+    const a = analyser;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const bufLen = analyser.frequencyBinCount;
+    const bufLen = a.frequencyBinCount;
     const data = new Uint8Array(bufLen);
 
     function draw() {
       if (!canvas || !ctx) return;
-      analyser.getByteTimeDomainData(data);
+      a.getByteTimeDomainData(data);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       ctx.beginPath();
