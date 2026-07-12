@@ -53,6 +53,8 @@ export default function ArticleDetail({ id, onBack }: ArticleDetailProps) {
   const [newAuthor, setNewAuthor] = useState("");
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -70,14 +72,21 @@ export default function ArticleDetail({ id, onBack }: ArticleDetailProps) {
   }, [id]);
 
   const handlePostComment = async () => {
-    if (!newAuthor.trim() || !newComment.trim()) return;
+    if (!newAuthor.trim() || !newComment.trim() || submitting) return;
+    setSubmitting(true);
+    setSubmitted(false);
     try {
       await api.postComment(id, newAuthor, newComment);
       const updated = await api.getComments(id);
       setComments(updated);
+      setNewAuthor("");
       setNewComment("");
+      setSubmitted(true);
+      setTimeout(() => setSubmitted(false), 3000);
     } catch {
       // ignore
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -204,9 +213,22 @@ export default function ArticleDetail({ id, onBack }: ArticleDetailProps) {
             />
             <button
               onClick={handlePostComment}
-              className="px-4 py-1.5 text-xs font-mono text-accent border border-dark-600 rounded hover:bg-dark-800 hover:border-accent transition-all"
+              disabled={submitting}
+              className={`px-4 py-1.5 text-xs font-mono rounded border transition-all ${
+                submitting
+                  ? "text-gray-600 border-dark-700 cursor-not-allowed"
+                  : submitted
+                  ? "text-green-400 border-accent-dim bg-dark-800"
+                  : "text-accent border-dark-600 hover:bg-dark-800 hover:border-accent"
+              }`}
             >
-              $ submit()
+              {submitting ? (
+                <><span className="inline-block w-2.5 h-2.5 border border-accent border-t-transparent rounded-full animate-spin mr-1.5" /> sending...</>
+              ) : submitted ? (
+                "✓ sent!"
+              ) : (
+                "$ submit()"
+              )}
             </button>
           </div>
         </div>

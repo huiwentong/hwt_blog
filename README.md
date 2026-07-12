@@ -58,6 +58,18 @@ podman-compose up --build
 # 或
 docker compose up --build
 ```
+#### 更新容器
+```bash
+podman build -t hwt-frontend:latest -f frontend/Dockerfile frontend/
+
+# 2. 重新构建后端镜像（如果需要）
+podman build -t hwt-backend:latest -f backend/Dockerfile backend/
+
+# 3. 重启容器
+podman-compose down
+podman-compose up -d
+```
+
 
 访问 http://localhost
 
