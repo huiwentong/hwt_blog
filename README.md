@@ -71,6 +71,42 @@ podman-compose up -d
 ```
 
 
+#### 强制更新前端
+```bash
+git pull
+
+# 重新构建镜像
+podman build --no-cache -t hwt-frontend:latest -f frontend/Dockerfile frontend/
+
+# 停止旧容器
+podman-compose stop frontend
+
+# 删除旧容器（用 podman 直接删）
+podman rm hwt-frontend
+
+# 重新创建并启动
+podman-compose up -d frontend
+
+cd ~/github/hwt_blog
+
+# 1. 显式构建（compose 会打正确的标签）
+podman-compose build frontend
+
+# 2. 查看构建后的镜像
+podman images | grep hwt_blog
+
+# 3. 删掉旧容器
+podman stop hwt-frontend
+podman rm hwt-frontend
+
+# 4. 基于新镜像重新创建容器
+podman-compose up -d frontend
+
+# 5. 验证
+curl -s http://localhost:8080 | grep -o "index-[A-Za-z0-9]*\.js"
+```
+
+
 访问 http://localhost
 
 ### 方式二: 本地开发
