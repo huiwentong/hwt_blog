@@ -1,4 +1,4 @@
-﻿import type { ArticleMeta, Comment, ToolItem, MediaItem, MediaListResponse, SiteInfo } from "../types";
+﻿import type { ArticleMeta, Comment, ToolItem, MediaListResponse, SiteInfo } from "../types";
 
 const API_BASE = "/api";
 
