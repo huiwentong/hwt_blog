@@ -7,6 +7,7 @@ RUN npm ci
 
 COPY . .
 RUN npm run build
+RUN ls -R /app/dist
 
 # ---- Stage 2: Serve with nginx ----
 FROM nginx:1.27-alpine
