@@ -6,10 +6,19 @@ const TRACK_INFO = {
   title: "Out Again",
   artist: "诺基亚",
 };
+type Particle = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  alpha: number;
+};
 
 // ─── Waveform ────────────────────────────────────────────────
 function Waveform({ analyser, isPlaying }: { analyser: AnalyserNode | null; isPlaying: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const particles = useRef<Particle[]>([]);
   const animRef = useRef(0);
 
   useEffect(() => {
@@ -23,6 +32,11 @@ function Waveform({ analyser, isPlaying }: { analyser: AnalyserNode | null; isPl
     const data = new Uint8Array(bufLen);
 
     function draw() {
+      if (!canvas || !analyser) return;
+      
+      
+      
+      
       if (!canvas || !ctx) return;
       a.getByteTimeDomainData(data);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -33,15 +47,55 @@ function Waveform({ analyser, isPlaying }: { analyser: AnalyserNode | null; isPl
       ctx.moveTo(0, canvas.height / 2);
       ctx.lineTo(canvas.width, canvas.height / 2);
       ctx.stroke();
-
+      
       ctx.beginPath();
       ctx.strokeStyle = "rgba(0, 255, 65, 0.7)";
       ctx.lineWidth = 1.5;
       ctx.shadowColor = "#00ff41";
       ctx.shadowBlur = 3;
-
+      
       const sw = canvas.width / bufLen;
+
       let x = 0;
+      let volume = 0;
+      for(let i=0;i<bufLen;i++){
+        volume += Math.abs(data[i]-128);
+      }
+      volume /= bufLen;
+
+      if(volume > 10){
+        const count = Math.floor(volume / 10);
+        for(let i=0;i<count;i++){
+          particles.current.push({
+            x:canvas.width/2,
+            y:canvas.height/2,
+            vx:(Math.random()-0.5)*2,
+            vy:(Math.random()-0.5)*2,
+            size:Math.random()*2+1,
+            alpha:1
+          });
+        }
+      }
+      particles.current.forEach(p=>{
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= 0.01;
+      });
+      particles.current = particles.current.filter(p=>p.alpha>0);
+
+      particles.current.forEach(p=>{
+        ctx.beginPath();
+        ctx.fillStyle =`rgba(0,65,255,${p.alpha})`;
+        ctx.arc(
+          p.x,
+          p.y,
+          p.size,
+          0,
+          Math.PI*2
+        );
+        ctx.fill();
+      });
+
       for (let i = 0; i < bufLen; i++) {
         const v = data[i] / 128.0;
         const y = (v * canvas.height) / 2;

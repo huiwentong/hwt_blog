@@ -7,23 +7,63 @@ interface HomeProps {
 }
 
 // ─── Matrix Rain Canvas ─────────────────────────────────────────
-function MatrixRain({ mouseX, mouseY }: { mouseX: number; mouseY: number }) {
+function MatrixRain() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef2 = useRef<HTMLCanvasElement>(null);
+  const mouseX = useRef<number>(window.innerWidth / 2);
+  const mouseY = useRef<number>(window.innerHeight / 2);
 
   useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseX.current = e.clientX;
+      mouseY.current = e.clientY;
+    };
+
+    window.addEventListener(
+      "mousemove",
+      handleMouseMove
+    );
+
+
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const canvas2 = canvasRef2.current;
+    if (!canvas || !canvas2) return;
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    const ctx2 = canvas2.getContext("2d");
+    const radius = 300;
+    if (!ctx || !ctx2) return;
 
     let animId: number;
     let cols: number;
     const chars = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789<>/{}[]|&^%$#@!";
 
     function resize() {
-      if (!canvas) return;
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      if (!canvas || !canvas2) return;
+      const dpr = window.devicePixelRatio || 1;
+
+      canvas.width =
+          window.innerWidth * dpr;
+      canvas.height =
+          window.innerHeight * dpr;
+
+      canvas.style.width =
+          window.innerWidth + "px";
+      canvas.style.height =
+          window.innerHeight + "px";
+
+      canvas2.width =
+          window.innerWidth * dpr;
+      canvas2.height =
+          window.innerHeight * dpr;
+
+      canvas2.style.width =
+          window.innerWidth + "px";
+      canvas2.style.height =
+          window.innerHeight + "px";
+
+
+      ctx.scale(dpr, dpr);
+      ctx2.scale(dpr, dpr);
       cols = Math.floor(canvas.width / 16);
     }
 
@@ -46,18 +86,37 @@ function MatrixRain({ mouseX, mouseY }: { mouseX: number; mouseY: number }) {
     init();
 
     function draw() {
-      if (!canvas || !ctx) return;
-      ctx.fillStyle = "rgba(10, 10, 15, 0.05)";
+      if (!canvas || !ctx || !canvas2 || !ctx2) return;
+      ctx.fillStyle = "rgba(10, 10, 15, 0.01)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx2.clearRect(0,0,canvas.width, canvas.height);
+
+      const gradient = ctx2.createRadialGradient(
+        Number(mouseX.current),
+        Number(mouseY.current),
+        0,
+        Number(mouseX.current),
+        Number(mouseY.current),
+        radius   
+      );
+      gradient.addColorStop(0,"rgba(0,255,65,0.2)");
+      gradient.addColorStop(0.6,"rgba(0,255,65,0.04)");
+      gradient.addColorStop(1,"rgba(0,255,65,0)");
+      ctx2.fillStyle = gradient;
+      ctx2.beginPath();
+      ctx2.arc(Number(mouseX.current),Number(mouseY.current),radius,0,Math.PI * 2);
+      ctx2.fill();
+
 
       for (let i = 0; i < drops.length; i++) {
         const x = i * 16;
         const y = drops[i] * 18;
 
-        const dx = (x - mouseX) / window.innerWidth;
-        const dy = (y - mouseY) / window.innerHeight;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const alpha = dist < 0.15 ? 0.08 : brightness[i] * 0.6;
+        // const dx = (x - Number(mouseX)) / window.innerWidth;
+        // const dy = (y - Number(mouseY)) / window.innerHeight;
+        // const dist = Math.sqrt(dx * dx + dy * dy);
+        // const alpha = dist < 0.15 ? 0.08 : brightness[i] * 0.6;
+        const alpha = brightness[i] * 0.6;
 
         ctx.font = "14px monospace";
         const char = chars[Math.floor(Math.random() * chars.length)];
@@ -73,6 +132,12 @@ function MatrixRain({ mouseX, mouseY }: { mouseX: number; mouseY: number }) {
         drops[i] += speeds[i];
         if (drops[i] * 18 > canvas.height + 20) {
           drops[i] = Math.floor(Math.random() * -10);
+          const gradientRect = ctx.createLinearGradient(x, 0, x, canvas.height);
+          gradientRect.addColorStop(0,"rgba(10, 10, 15, 0.8)");
+          gradientRect.addColorStop(0.7,"rgba(10, 10, 15, 0.5)");
+          gradientRect.addColorStop(1,"rgba(10, 10, 15, 0.3)");
+          ctx.fillStyle = gradientRect;
+          ctx.fillRect(x, 0, 16, canvas.height);
         }
       }
 
@@ -86,15 +151,26 @@ function MatrixRain({ mouseX, mouseY }: { mouseX: number; mouseY: number }) {
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener("resize", handleResize);
+      window.removeEventListener(
+        "mousemove",
+        handleMouseMove
+      );
     };
-  }, [mouseX, mouseY]);
+  }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 w-full h-full pointer-events-none"
-      style={{ zIndex: 0, opacity: 0.5 }}
-    />
+    <>
+      <canvas
+        ref={canvasRef2}
+        className="fixed inset-0 w-full h-full pointer-events-none"
+        style={{ zIndex: 1, opacity: 0.5 }}
+      />
+      <canvas
+        ref={canvasRef}
+        className="fixed inset-0 w-full h-full pointer-events-none"
+        style={{ zIndex: 0, opacity: 0.5 }}
+      />
+    </>
   );
 }
 
@@ -139,7 +215,7 @@ function TypewriterText({ text, className }: { text: string; className?: string 
   return (
     <span className={className}>
       {displayed}
-      {!done && <span className="animate-pulse text-accent">_</span>}
+      {<span className="animate-blink text-accent">_</span>}
     </span>
   );
 }
@@ -388,8 +464,8 @@ export default function Home({ onNavigate }: HomeProps) {
 
   return (
     <div className="relative">
-      <MatrixRain mouseX={mousePos.x} mouseY={mousePos.y} />
-      <Spotlight mouseX={mousePos.x} mouseY={mousePos.y} />
+      <MatrixRain />
+      {/* <Spotlight mouseX={mousePos.x} mouseY={mousePos.y} /> */}
 
       <section
         ref={heroRef}

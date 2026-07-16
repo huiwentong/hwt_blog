@@ -23,6 +23,22 @@
   --color-neon-blue: #0ff;
   --color-neon-purple: #b388ff;
   --color-cyber-red: #ff1744;
+  --animate-blink: blink 1s ease-in-out infinite;
+
+  @keyframes blink {
+    0%{
+      opacity: 0;
+    }
+    25%{
+      opacity: 1;
+    }
+    75%{
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
 }
 
 /* 鈹€鈹€ Global reset & base 鈹€鈹€ */
