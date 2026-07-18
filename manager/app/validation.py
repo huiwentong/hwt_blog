@@ -29,15 +29,15 @@ def validate_article(
     result = ValidationResult()
 
     if not title.strip():
-        result.add_error("‐标记】不能为空")
+        result.add_error("【标题】不能为空")
     if not summary.strip():
-        result.add_error("‐撬墙】不能为空")
+        result.add_error("【摘要】不能为空")
     if not content.strip():
-        result.add_error("‐正旆】不能为空")
+        result.add_error("【正文】不能为空")
     if not category.strip():
-        result.add_error("‐分类】不能为空，请选择一个分类")
+        result.add_error("【分类】不能为空，请选择一个分类")
     if not tags.strip():
-        result.add_warning("‐栆筷】未宊入，完对資流栆筷以信抃択")
+        result.add_warning("【标签】未填入，建议填写标签以便检索")
 
     return result
 
@@ -51,15 +51,15 @@ def validate_tool(
     result = ValidationResult()
 
     if not name.strip():
-        result.add_error("‐工具名称】不能为空")
+        result.add_error("【工具名称】不能为空")
     if not description.strip():
-        result.add_error("‐工具描進】不能为空")
+        result.add_error("【工具描述】不能为空")
     if not url.strip():
-        result.add_error("‐工具链接】不能为空")
+        result.add_error("【工具链接】不能为空")
     elif not url.startswith(" http://","https://"):
-        result.add_warning("‐工帖接】建设以 https:/ 开始）")
+        result.add_warning("【工具链接】建议以 https:// 开始")
     if not category.strip():
-        result.add_error("‐工具分类】不能为空，请选择一个分籷")
+        result.add_error("【工具分类】不能为空，请选择一个分类")
 
     return result
 
@@ -71,8 +71,8 @@ def validate_media(
     result = ValidationResult()
 
     if not title.strip():
-        result.add_error("‐啜体标覆】不能为空")
+        result.add_error("【媒体标题】不能为空")
     if not type_:
-        result.add_error("‐啜体类型】不能为空，请选择一个类型")
+        result.add_error("【媒体类型】不能为空，请选择一个类型")
 
     return result

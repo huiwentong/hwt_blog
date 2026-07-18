@@ -38,15 +38,26 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     run_migration()
 
-    # Start background DB syncer thread
     import threading
+    import time
+    import os
     db_path = get_db_path()
+    shared_db = r"Z:\github\db\hwt_blog.db"
 
+    # Initial sync: if shared DB exists, merge immediately (no signal file needed)
+    if os.path.isfile(shared_db):
+        print(f"[syncer] Shared DB found, performing initial sync...")
+        try:
+            if merge_from_shared(db_path, force=True):
+                print("[syncer] Initial sync completed")
+        except Exception as e:
+            print(f"[syncer] Initial sync failed: {e}")
+
+    # Background thread: watch for signal files
     def _watch_loop():
-        import time
         while True:
             try:
-                if merge_from_shared(db_path):
+                if merge_from_shared(db_path, force=True):
                     print("[syncer] Database merged from shared folder")
             except Exception:
                 pass

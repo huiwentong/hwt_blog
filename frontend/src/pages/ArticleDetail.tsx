@@ -3,6 +3,7 @@ import { api } from "../api";
 import type { ArticleMeta, Comment } from "../types";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 import Sidebar from "../components/Sidebar";
 
 interface ArticleDetailProps {
@@ -159,7 +160,7 @@ export default function ArticleDetail({ id, onBack }: ArticleDetailProps) {
 
           {/* Content */}
           <div className="prose prose-invert max-w-none text-gray-300 text-sm leading-relaxed font-mono">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{article.content}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{article.content}</ReactMarkdown>
           </div>
         </article>
 

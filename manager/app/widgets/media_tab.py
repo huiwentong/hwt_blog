@@ -9,6 +9,7 @@ from PySide6.QtCore import Qt
 
 from app.validation import validate_media
 from app.db_manager import DbManager
+from app.cos.cos_client import CosClient
 
 MEDIA_TYPES = [
     ("music", "♫ 音乐"),
@@ -188,13 +189,26 @@ class MediaTab(QWidget):
         self.feedback_label.clear()
 
     def _local_path_to_url(self, file_path: str) -> str:
-        """Convert a local Windows drive path to the public server URL."""
+        """Convert a local Windows drive path to the public server URL.
+
+        Images, music, and video files are uploaded to Tencent Cloud COS,
+        and the COS URL is returned. Other files fall back to local server mapping.
+        """
         import os
         from urllib.parse import quote
+
+        ext = os.path.splitext(file_path)[1].lower()
+        media_extensions = {".mp3", ".wav", ".flac", ".mp4", ".mkv", ".avi",
+                           ".mov", ".webm", ".jpg", ".jpeg", ".png", ".gif", ".webp"}
+
+        if ext in media_extensions and os.path.isfile(file_path):
+            cos_url = self._upload_to_cos(file_path)
+            if cos_url:
+                return cos_url
+
+        # Fallback: original local server URL logic
         drive = os.path.splitdrive(file_path)[0].upper()
-        # Get the relative path from the drive root (strip drive letter + colon + separator)
         rel = file_path[len(drive):].lstrip("\\/").replace("\\", "/")
-        # URL-encode each path segment to handle Chinese/special characters
         segments = [quote(s, safe="") for s in rel.split("/")]
         encoded_path = "/".join(segments)
         mapping = {
@@ -204,8 +218,43 @@ class MediaTab(QWidget):
         }
         if drive in mapping:
             return mapping[drive][1]
-        # Unknown drive — fall back to URL-encoded forward-slash path
         return quote(file_path.replace("\\", "/"), safe="/")
+
+    def _upload_to_cos(self, file_path: str) -> str | None:
+        """Upload a local file to Tencent Cloud COS and return its public URL.
+
+        Args:
+            file_path: 本地文件路径
+
+        Returns:
+            COS 公开访问 URL，上传失败则返回 None
+        """
+        import os
+        try:
+            cos = CosClient.from_config()
+            base_name = os.path.basename(file_path)
+            # Determine media subfolder from file extension
+            ext = os.path.splitext(base_name)[1].lower()
+            image_exts = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+            music_exts = {".mp3", ".wav", ".flac"}
+            video_exts = {".mp4", ".mkv", ".avi", ".mov", ".webm"}
+            if ext in music_exts:
+                folder = "music"
+            elif ext in video_exts:
+                folder = "movies"
+            else:
+                folder = "pictures"
+
+            cos_key = f"media/{folder}/{base_name}"
+            result = cos.upload_file(file_path, cos_key)
+            if result.success:
+                return cos.get_file_url(cos_key)
+            else:
+                print(f"COS upload failed: {result.message}")
+                return None
+        except Exception as e:
+            print(f"COS upload error: {e}")
+            return None
 
     def _create_thumbnail(self, file_path: str, max_size: int = 400) -> str | None:
         """Generate a thumbnail image next to the original file. Returns thumbnail path or None."""

@@ -27,7 +27,7 @@ def _get_watch_dir() -> str | None:
         return None
 
 
-def merge_from_shared(backend_db: str) -> bool:
+def merge_from_shared(backend_db: str, force: bool = False) -> bool:
     """Fully replace articles/tools/media from shared DB, preserving comments and views."""
     watch_dir = _get_watch_dir()
     if not watch_dir:
@@ -36,10 +36,10 @@ def merge_from_shared(backend_db: str) -> bool:
     signal_path = os.path.join(watch_dir, SIGNAL_FILE)
     shared_db = os.path.join(watch_dir, DB_FILE)
 
-    if not os.path.isfile(signal_path):
-        return False
     if not os.path.isfile(shared_db):
-        print(f"[syncer] Signal file found but no DB at: {shared_db}")
+        print(f"[syncer] Shared DB not found at: {shared_db}")
+        return False
+    if not force and not os.path.isfile(signal_path):
         return False
 
     now = datetime.now(timezone.utc).isoformat()
@@ -124,7 +124,7 @@ def merge_from_shared(backend_db: str) -> bool:
         b_conn.close()
         s_conn.close()
 
-        os.remove(signal_path)
+        if os.path.isfile(signal_path): os.remove(signal_path)
         return True
 
     except Exception as e:

@@ -9,6 +9,8 @@ from PySide6.QtCore import Qt
 
 from app.validation import validate_article
 from app.db_manager import DbManager
+from app.cos.cos_client import CosClient
+import re
 
 CATEGORIES = ["Tech", "Architecture", "Life", "Review", "General"]
 
@@ -34,8 +36,12 @@ class ArticleTab(QWidget):
         self.summary_input.setPlaceholderText("文章摘要（必填）")
         self.summary_input.setMaximumHeight(80)
 
+        self.md_browse_btn = QPushButton("📂 选择 Markdown 文件...")
+        self.md_browse_btn.clicked.connect(self._browse_md)
+
         self.content_input = QTextEdit()
-        self.content_input.setPlaceholderText("文章正文 Markdown（必填）")
+        self.content_input.setPlaceholderText("文章正文 Markdown（处理后自动填入，可手动编辑）")
+        self.content_input.setMinimumHeight(200)
 
         row1 = QHBoxLayout()
         row1.addWidget(QLabel("分类:"))
@@ -50,9 +56,10 @@ class ArticleTab(QWidget):
         form_layout.addWidget(self.title_input)
         form_layout.addWidget(QLabel("摘要:"))
         form_layout.addWidget(self.summary_input)
-        form_layout.addWidget(QLabel("正文:"))
-        form_layout.addWidget(self.content_input)
         form_layout.addLayout(row1)
+        form_layout.addWidget(QLabel("正文:"))
+        form_layout.addWidget(self.md_browse_btn)
+        form_layout.addWidget(self.content_input)
 
         self.feedback_label = QLabel()
         self.feedback_label.setWordWrap(True)
@@ -94,7 +101,7 @@ class ArticleTab(QWidget):
         splitter = QSplitter(Qt.Vertical)
         splitter.addWidget(form_group)
         splitter.addWidget(table_group)
-        splitter.setSizes([350, 250])
+        splitter.setSizes([450, 250])
         main_layout.addWidget(splitter)
 
     def _show_context_menu(self, pos):
@@ -134,6 +141,156 @@ class ArticleTab(QWidget):
                     QMessageBox.information(self, "完成", "文章已删除。")
                 except Exception as e:
                     QMessageBox.critical(self, "错误", f"删除失败: {e}")
+
+    def _browse_md(self):
+        """Open file dialog to select a Markdown file, process it, and fill the form."""
+        from PySide6.QtWidgets import QFileDialog
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "选择 Markdown 文件", "",
+            "Markdown 文件 (*.md);;所有文件 (*)",
+        )
+        if not file_path:
+            return
+
+        self._process_md_file(file_path)
+
+    def _process_md_file(self, md_path: str):
+        """Read a Markdown file, upload local media to COS, and fill form fields."""
+        import os
+        from urllib.parse import urlparse, unquote
+
+        md_dir = os.path.dirname(os.path.abspath(md_path))
+
+        try:
+            with open(md_path, "r", encoding="utf-8") as f:
+                md_content = f.read()
+        except Exception as e:
+            QMessageBox.critical(self, "读取失败", f"无法读取文件:\n{e}")
+            return
+
+        base = os.path.splitext(os.path.basename(md_path))[0]
+        if not self.title_input.text():
+            self.title_input.setText(base)
+
+        self.feedback_label.setText(
+            "<span style='color:#ffab00'>⏳ 正在扫描并上传本地媒体文件到 COS…</span>"
+        )
+        from PySide6.QtWidgets import QApplication
+        QApplication.processEvents()
+
+        processed_content = self._process_media_refs(md_content, md_dir)
+        self.content_input.setPlainText(processed_content)
+
+        self.feedback_label.setText(
+            "<span style='color:#00ff41'>✅ Markdown 已处理，媒体文件已上传至 COS</span>"
+        )
+
+    MEDIA_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp",
+                        ".mp4", ".mkv", ".avi", ".mov", ".webm",
+                        ".mp3", ".wav", ".flac"}
+
+    def _process_media_refs(self, md_content: str, md_dir: str) -> str:
+        """Find local media references in MD content, upload to COS, and replace paths."""
+        import os
+        from collections import defaultdict
+
+        replacements = {}
+
+        # Pattern 1: Markdown images and links: [text](path) or ![alt](path)
+        md_pattern = re.compile(r"\[([^\]]*)\]\(([^)]+)\)")
+
+        # Pattern 2: HTML tags with src attribute (img, video, audio, source)
+        html_src = re.compile(
+            r"<(?:img|video|audio|source)\s[^>]*src\s*=\s*[\"']([^\"']+)[\"']",
+            re.IGNORECASE
+        )
+
+        candidate_paths = set()
+
+        for match in md_pattern.finditer(md_content):
+            p = match.group(2).strip()
+            if p and not p.startswith(("http://", "https://", "data:", "#", "mailto:")):
+                candidate_paths.add(p)
+
+        # Debug: log all HTML src matches
+        html_matches = list(html_src.finditer(md_content))
+        print(f"[COS DEBUG] HTML src matches found: {len(html_matches)}")
+        for match in html_matches:
+            p = match.group(1).strip()
+            print(f"[COS DEBUG]   HTML src: {p}")
+            if p and not p.startswith(("http://", "https://", "data:", "#")):
+                candidate_paths.add(p)
+
+        print(f"[COS DEBUG] Total candidates: {len(candidate_paths)}")
+        for rel_path in sorted(candidate_paths):
+            resolved = self._resolve_media_path(rel_path, md_dir)
+            print(f"[COS DEBUG]   Candidate: {rel_path}")
+            print(f"[COS DEBUG]     resolved: {resolved}")
+            print(f"[COS DEBUG]     isfile: {os.path.isfile(resolved) if resolved else False}")
+            if resolved and os.path.isfile(resolved):
+                ext = os.path.splitext(resolved)[1].lower()
+                is_media = ext in self.MEDIA_EXTENSIONS
+                print(f"[COS DEBUG]     ext: {ext}, is_media: {is_media}")
+                if ext in self.MEDIA_EXTENSIONS:
+                    cos_url = self._upload_single_to_cos(resolved)
+                    if cos_url:
+                        replacements[rel_path] = cos_url
+
+        for old_path, new_url in sorted(replacements.items(), key=lambda x: -len(x[0])):
+            md_content = md_content.replace(old_path, new_url)
+
+        return md_content
+
+    def _resolve_media_path(self, path: str, md_dir: str) -> str | None:
+        """Resolve a potentially relative media path to an absolute file path."""
+        import os
+
+        path = path.replace("\\", "/")
+
+        if os.path.isabs(path):
+            return os.path.normpath(path)
+
+        abs_path = os.path.normpath(os.path.join(md_dir, path))
+        if os.path.isfile(abs_path):
+            return abs_path
+
+        return None
+
+    def _upload_single_to_cos(self, file_path: str) -> str | None:
+        """Upload a single media file to COS and return its public URL."""
+        import os
+        try:
+            cos = CosClient.from_config()
+            base_name = os.path.basename(file_path)
+            ext = os.path.splitext(base_name)[1].lower()
+
+            image_exts = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+            music_exts = {".mp3", ".wav", ".flac"}
+            video_exts = {".mp4", ".mkv", ".avi", ".mov", ".webm"}
+
+            if ext in music_exts:
+                folder = "music"
+            elif ext in video_exts:
+                folder = "movies"
+            else:
+                folder = "pictures"
+
+            cos_key = f"media/{folder}/{base_name}"
+
+            # Skip upload if file already exists on COS
+            if cos.file_exists(cos_key):
+                print(f"COS already exists, skip upload: {cos_key}")
+                return cos.get_file_url(cos_key)
+
+            result = cos.upload_file(file_path, cos_key)
+            if result.success:
+                return cos.get_file_url(cos_key)
+            else:
+                print(f"COS upload failed: {result.message}")
+                return None
+        except Exception as e:
+            print(f"COS upload error: {e}")
+            return None
 
     def _submit(self):
         title = self.title_input.text()

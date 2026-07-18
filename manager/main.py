@@ -10,6 +10,13 @@ def main():
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     window = MainWindow()
+    # Fill screen height, keep original width
+    from PySide6.QtGui import QScreen
+    screen = QApplication.primaryScreen()
+    if screen:
+        screen_geom = screen.availableGeometry()
+        window.resize(window.width(), screen_geom.height())
+        window.move(screen_geom.x(), screen_geom.y())
     window.show()
     sys.exit(app.exec())
 

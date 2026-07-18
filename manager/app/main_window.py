@@ -22,7 +22,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("HWT BLOG — 管理后端系统")
-        self.setMinimumSize(900, 700)
+        self.setMinimumSize(1100, 800)
         self.setStyleSheet(DARK_STYLE)
 
         self._db_manager: DbManager | None = None
