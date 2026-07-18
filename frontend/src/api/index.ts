@@ -43,6 +43,12 @@ export const api = {
     return fetchJSON<MediaListResponse>(`/media?${params}`);
   },
 
+  // Adjacent articles (prev/next)
+  getAdjacentArticles: (id: number) =>
+    fetchJSON<{ prev: { id: number; title: string } | null; next: { id: number; title: string } | null }>(
+      `/articles/${id}/adjacent`
+    ),
+
   // Site info
   getSiteInfo: () => fetchJSON<SiteInfo>("/site-info"),
 };

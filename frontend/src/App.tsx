@@ -8,7 +8,7 @@ import Tool from "./pages/Tool";
 import My from "./pages/My";
 import About from "./pages/About";
 
-type Page = "home" | "articles" | "article" | "tool" | "my" | "about";
+export type Page = "home" | "articles" | "article" | "tool" | "my" | "about";
 
 function App() {
   const [page, setPage] = useState<Page>("home");
@@ -31,7 +31,7 @@ function App() {
       case "articles":
         return <ArticleList onNavigate={navigate} />;
       case "article":
-        return articleId ? <ArticleDetail id={articleId} onBack={() => navigate("articles")} /> : <ArticleList onNavigate={navigate} />;
+        return articleId ? <ArticleDetail id={articleId} onBack={() => navigate("articles")} onNavigate={(p, id) => navigate(p as Page, id)} /> : <ArticleList onNavigate={navigate} />;
       case "tool":
         return <Tool />;
       case "my":

@@ -71,3 +71,31 @@ def get_article(article_id: int, db: Session = Depends(get_db)):
         created_at=article.created_at,
         updated_at=article.updated_at,
     )
+
+
+
+@router.get("/{article_id}/adjacent")
+def get_adjacent_articles(article_id: int, db: Session = Depends(get_db)):
+    """Get previous and next article IDs/titles for navigation."""
+    article = db.query(Article).filter(Article.id == article_id).first()
+    if not article:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Article not found")
+
+    prev_article = (
+        db.query(Article.id, Article.title)
+        .filter(Article.created_at < article.created_at)
+        .order_by(Article.created_at.desc())
+        .first()
+    )
+    next_article = (
+        db.query(Article.id, Article.title)
+        .filter(Article.created_at > article.created_at)
+        .order_by(Article.created_at.asc())
+        .first()
+    )
+
+    return {
+        "prev": {"id": prev_article.id, "title": prev_article.title} if prev_article else None,
+        "next": {"id": next_article.id, "title": next_article.title} if next_article else None,
+    }
