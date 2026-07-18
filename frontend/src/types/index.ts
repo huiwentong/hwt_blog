@@ -1,4 +1,5 @@
 ﻿export interface ArticleMeta {
+  comment_count?: number;
   id: number;
   title: string;
   summary: string;

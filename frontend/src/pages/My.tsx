@@ -52,6 +52,7 @@ function spanClass(ar: number | undefined, type: string, idx: number): string {
 export default function My() {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [filter, setFilter] = useState<MediaFilter>("all");
+  const [mediaSearch, setMediaSearch] = useState("");
   const [selected, setSelected] = useState<MediaItem | null>(null);
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [failedPreviews, setFailedPreviews] = useState<Set<number>>(new Set());
@@ -63,13 +64,13 @@ export default function My() {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
 
-  const fetchMedia = useCallback(async (pageNum: number, mediaFilter: MediaFilter, append: boolean) => {
+  const fetchMedia = useCallback(async (pageNum: number, mediaFilter: MediaFilter, append: boolean, searchQ?: string) => {
     if (loadingRef.current) return;
     loadingRef.current = true;
     setLoading(true);
     try {
       const type = mediaFilter === "all" ? undefined : mediaFilter;
-      const res = await api.getMedia(type, pageNum, PAGE_SIZE);
+      const res = await api.getMedia(type, pageNum, PAGE_SIZE, searchQ || undefined);
       if (res && Array.isArray(res.items)) {
         if (append) {
           setMedia(prev => [...prev, ...res.items]);
@@ -93,7 +94,7 @@ export default function My() {
     setMedia([]);
     setPage(1);
     setAspectRatios({});
-    fetchMedia(1, filter, false);
+    fetchMedia(1, filter, false); setMediaSearch("");
   }, [filter, fetchMedia]);
 
   useEffect(() => {
@@ -144,6 +145,51 @@ export default function My() {
           &gt; 音乐、照片、电影——那些塑造我的碎片。
         </p>
       </section>
+
+      {/* Animated search bar */}
+      <div className="relative mb-4 group">
+        <div className="absolute -inset-1 rounded-xl bg-gradient-to-r from-accent/0 via-accent/0 to-neon-blue/0 opacity-0 group-focus-within:opacity-100 group-focus-within:from-accent/20 group-focus-within:via-accent/5 group-focus-within:to-neon-blue/20 transition-all duration-500 blur-md" />
+        <div className="relative flex items-center bg-dark-900 border border-dark-600 rounded-lg overflow-hidden transition-all duration-300 group-hover:border-dark-500 group-focus-within:border-accent/60 group-focus-within:shadow-[0_0_20px_-5px_rgba(0,255,255,0.15)] group-focus-within:scale-[1.01]">
+          {/* Left accent bar */}
+          <span className="w-0.5 h-6 bg-dark-600 rounded-full ml-3 transition-all duration-300 group-focus-within:h-8 group-focus-within:bg-accent/60 group-hover:bg-dark-400" />
+
+          {/* Search icon */}
+          <span className="ml-3 text-sm text-gray-600 transition-all duration-300 group-focus-within:text-accent/60 group-hover:text-gray-400">
+            &#x1F50D;
+          </span>
+
+          <input
+            type="text"
+            placeholder="search my space..."
+            value={mediaSearch}
+            onChange={(e) => setMediaSearch(e.target.value)}
+            className="flex-1 bg-transparent px-3 py-2.5 text-xs font-mono text-gray-200 placeholder-gray-700 focus:outline-none transition-all duration-300 group-hover:placeholder-gray-600 group-focus-within:placeholder-accent/40"
+          />
+
+          {mediaSearch && (
+            <button
+              onClick={() => {
+                setMediaSearch("");
+                setMedia([]);
+                setPage(1);
+                setInitialLoading(true);
+                fetchMedia(1, filter, false);
+              }}
+              className="mr-2 w-5 h-5 flex items-center justify-center rounded-full text-gray-600 hover:text-accent hover:bg-dark-700 transition-all duration-200 text-[10px] group-active:scale-75"
+            >
+              &#x2715;
+            </button>
+          )}
+
+          {/* Right accent bar */}
+          <span className="w-0.5 h-6 bg-dark-600 rounded-full mr-3 transition-all duration-300 group-focus-within:h-8 group-focus-within:bg-neon-blue/60 group-hover:bg-dark-400" />
+        </div>
+
+        {/* Bottom floating label on focus */}
+        <div className="absolute -bottom-4 left-4 text-[9px] font-mono text-accent/0 transition-all duration-300 group-focus-within:text-accent/50 pointer-events-none">
+          $ search title / description...
+        </div>
+      </div>
 
       <div className="flex flex-wrap gap-2 mb-6">
         {filters.map((f) => (

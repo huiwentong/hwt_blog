@@ -37,9 +37,10 @@ export const api = {
   getTools: () => fetchJSON<ToolItem[]>("/tools"),
 
   // Media
-  getMedia: (type?: string, page = 1, limit = 20) => {
+  getMedia: (type?: string, page = 1, limit = 20, search?: string) => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (type) params.set("type", type);
+    if (search) params.set("search", search);
     return fetchJSON<MediaListResponse>(`/media?${params}`);
   },
 

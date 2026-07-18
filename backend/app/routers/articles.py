@@ -30,6 +30,7 @@ def list_articles(
     items = q.order_by(Article.created_at.desc()).offset((page - 1) * limit).limit(limit).all()
 
     def to_resp(a: Article) -> ArticleResponse:
+        comment_count = db.query(func.count(Comment.id)).filter(Comment.article_id == a.id).scalar() or 0
         return ArticleResponse(
             id=a.id,
             title=a.title,
@@ -39,6 +40,7 @@ def list_articles(
             category=a.category,
             tags=a.tags_list,
             views=a.views,
+            comment_count=comment_count,
             created_at=a.created_at,
             updated_at=a.updated_at,
         )
@@ -59,6 +61,7 @@ def get_article(article_id: int, db: Session = Depends(get_db)):
     article.views += 1
     db.commit()
     db.refresh(article)
+    comment_count = db.query(func.count(Comment.id)).filter(Comment.article_id == article.id).scalar() or 0
     return ArticleResponse(
         id=article.id,
         title=article.title,
@@ -68,6 +71,7 @@ def get_article(article_id: int, db: Session = Depends(get_db)):
         category=article.category,
         tags=article.tags_list,
         views=article.views,
+        comment_count=comment_count,
         created_at=article.created_at,
         updated_at=article.updated_at,
     )
