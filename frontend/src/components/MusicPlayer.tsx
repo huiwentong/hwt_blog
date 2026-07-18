@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 
-const DEFAULT_MUSIC_URL = "/audio/04_Out_Again.mp3";
+const DEFAULT_MUSIC_URL = "https://hw-tblog-1452758724.cos.ap-beijing.myqcloud.com/04_Out_Again.mp3";
 
 const TRACK_INFO = {
   title: "Out Again",
