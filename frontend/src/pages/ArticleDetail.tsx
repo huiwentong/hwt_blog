@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { api } from "../api";
 import type { ArticleMeta, Comment } from "../types";
 import ReactMarkdown from "react-markdown";
@@ -192,11 +192,11 @@ export default function ArticleDetail({ id, onBack, onNavigate }: ArticleDetailP
 
           {/* Previous / Next Navigation */}
           <nav className="flex items-stretch justify-between gap-3 sm:gap-4">
-            {adjacent.prev ? (
+            {adjacent.next ? (
               <button
                 onClick={() => {
                   window.scrollTo({ top: 0, behavior: "instant" });
-                  onNavigate("article", adjacent.prev!.id);
+                  onNavigate("article", adjacent.next!.id);
                 }}
                 className="group relative flex-1 flex flex-col items-start gap-1.5 p-4 sm:p-5 rounded-xl border border-dark-700 bg-dark-800/30 overflow-hidden transition-all duration-500 hover:border-accent/40 hover:bg-dark-800/80 hover:shadow-[0_0_25px_-5px_rgba(0,255,255,0.15)] text-left"
               >
@@ -211,13 +211,13 @@ export default function ArticleDetail({ id, onBack, onNavigate }: ArticleDetailP
                     </svg>
                   </span>
                   <span className="text-[10px] font-mono tracking-widest uppercase text-gray-500 group-hover:text-accent/80 transition-colors duration-400">
-                    Previous
+                    Newer
                   </span>
                 </div>
 
                 {/* Title */}
                 <span className="relative z-10 text-xs sm:text-sm font-mono text-gray-300 group-hover:text-white leading-relaxed line-clamp-2 transition-colors duration-400 ml-0 group-hover:ml-1">
-                  {adjacent.prev.title}
+                  {adjacent.next.title}
                 </span>
 
                 {/* Bottom border accent that expands on hover */}
@@ -227,11 +227,11 @@ export default function ArticleDetail({ id, onBack, onNavigate }: ArticleDetailP
               <div className="flex-1" />
             )}
 
-            {adjacent.next ? (
+            {adjacent.prev ? (
               <button
                 onClick={() => {
                   window.scrollTo({ top: 0, behavior: "instant" });
-                  onNavigate("article", adjacent.next!.id);
+                  onNavigate("article", adjacent.prev!.id);
                 }}
                 className="group relative flex-1 flex flex-col items-end gap-1.5 p-4 sm:p-5 rounded-xl border border-dark-700 bg-dark-800/30 overflow-hidden transition-all duration-500 hover:border-neon-blue/40 hover:bg-dark-800/80 hover:shadow-[0_0_25px_-5px_rgba(0,150,255,0.15)] text-right"
               >
@@ -246,13 +246,13 @@ export default function ArticleDetail({ id, onBack, onNavigate }: ArticleDetailP
                     </svg>
                   </span>
                   <span className="text-[10px] font-mono tracking-widest uppercase text-gray-500 group-hover:text-neon-blue/80 transition-colors duration-400">
-                    Next
+                    Older
                   </span>
                 </div>
 
                 {/* Title */}
                 <span className="relative z-10 text-xs sm:text-sm font-mono text-gray-300 group-hover:text-white leading-relaxed line-clamp-2 transition-colors duration-400 mr-0 group-hover:-mr-1">
-                  {adjacent.next.title}
+                  {adjacent.prev.title}
                 </span>
 
                 {/* Bottom border accent */}

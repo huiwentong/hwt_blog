@@ -1,4 +1,4 @@
-﻿from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 import pathlib
 
@@ -15,7 +15,14 @@ engine = create_engine(
         "check_same_thread": False,
         "timeout": 30,
     },
+    pool_pre_ping=True,
 )
+
+
+@event.listens_for(engine, "connect")
+def set_busy_timeout(dbapi_connection, connection_record):
+    dbapi_connection.execute("PRAGMA busy_timeout = 30000")
+
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

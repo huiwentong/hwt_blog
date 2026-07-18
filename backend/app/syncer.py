@@ -48,10 +48,11 @@ def merge_from_shared(backend_db: str, force: bool = False) -> bool:
         b_conn = sqlite3.connect(backend_db, timeout=10)
         b_cur = b_conn.cursor()
         b_cur.execute("PRAGMA journal_mode=WAL")
+        b_cur.execute("PRAGMA busy_timeout = 30000")
         b_cur.execute("PRAGMA foreign_keys = OFF")
         b_conn.commit()
 
-        s_conn = sqlite3.connect(shared_db)
+        s_conn = sqlite3.connect(shared_db, timeout=30)
         s_cur = s_conn.cursor()
 
 
@@ -158,6 +159,7 @@ def sync_comment_to_shared(
         conn = sqlite3.connect(shared_db, timeout=10)
         cur = conn.cursor()
         cur.execute("PRAGMA journal_mode=WAL")
+        cur.execute("PRAGMA busy_timeout = 30000")
 
         # Ensure the table exists (schema may differ from backend)
         cur.execute("""

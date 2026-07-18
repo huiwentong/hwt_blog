@@ -86,16 +86,19 @@ def get_adjacent_articles(article_id: int, db: Session = Depends(get_db)):
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Article not found")
 
-    prev_article = (
-        db.query(Article.id, Article.title)
-        .filter(Article.created_at < article.created_at)
-        .order_by(Article.created_at.desc())
-        .first()
-    )
+    # next = article with larger id = newer (confirmed by seeded data: created_at asc == id asc)
     next_article = (
         db.query(Article.id, Article.title)
-        .filter(Article.created_at > article.created_at)
-        .order_by(Article.created_at.asc())
+        .filter(Article.id > article.id)
+        .order_by(Article.id.asc())
+        .first()
+    )
+
+    # prev = article with smaller id = older
+    prev_article = (
+        db.query(Article.id, Article.title)
+        .filter(Article.id < article.id)
+        .order_by(Article.id.desc())
         .first()
     )
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { api } from "../api";
 import type { ArticleMeta } from "../types";
 
@@ -446,18 +446,17 @@ export default function Home({ onNavigate }: HomeProps) {
   // }, [handleMouseMove]);
 
   useEffect(() => {
-    const hero = heroRef.current;
-    if (!hero) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) {
-          setShowArticles(true);
-        }
-      },
-      { threshold: 0 }
-    );
-    observer.observe(hero);
-    return () => observer.disconnect();
+    const onScroll = () => {
+      if (window.scrollY > window.innerHeight * 0.2) {
+        setShowArticles(true);
+      }
+    };
+    // Also check immediately in case the page loads already scrolled down
+    if (window.scrollY > window.innerHeight * 0.2) {
+      setShowArticles(true);
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   const totalArticles = articles.length;
