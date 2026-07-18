@@ -39,6 +39,7 @@ function MatrixRain() {
 
     function resize() {
       if (!canvas || !canvas2) return;
+      if (!ctx || !ctx2) return;
       const dpr = window.devicePixelRatio || 1;
 
       canvas.width =
@@ -175,38 +176,38 @@ function MatrixRain() {
 }
 
 // ─── Mouse-tracking spotlight ───────────────────────────────────
-function Spotlight({ mouseX, mouseY }: { mouseX: number; mouseY: number }) {
-  return (
-    <div
-      className="fixed pointer-events-none"
-      style={{
-        left: mouseX - 300,
-        top: mouseY - 300,
-        width: 600,
-        height: 600,
-        background: `radial-gradient(circle at center, rgba(0, 255, 65, 0.04) 0%, transparent 70%)`,
-        zIndex: 1,
-        transition: "left 0.15s ease-out, top 0.15s ease-out",
-      }}
-    />
-  );
-}
+// function Spotlight({ mouseX, mouseY }: { mouseX: number; mouseY: number }) {
+//   return (
+//     <div
+//       className="fixed pointer-events-none"
+//       style={{
+//         left: mouseX - 300,
+//         top: mouseY - 300,
+//         width: 600,
+//         height: 600,
+//         background: `radial-gradient(circle at center, rgba(0, 255, 65, 0.04) 0%, transparent 70%)`,
+//         zIndex: 1,
+//         transition: "left 0.15s ease-out, top 0.15s ease-out",
+//       }}
+//     />
+//   );
+// }
 
 // ─── Typewriter text ────────────────────────────────────────────
 function TypewriterText({ text, className }: { text: string; className?: string }) {
   const [displayed, setDisplayed] = useState("");
-  const [done, setDone] = useState(false);
+  // const [done, setDone] = useState(false);
 
   useEffect(() => {
     setDisplayed("");
-    setDone(false);
+    // setDone(false);
     let i = 0;
     const interval = setInterval(() => {
       i++;
       setDisplayed(text.slice(0, i));
       if (i >= text.length) {
         clearInterval(interval);
-        setDone(true);
+        // setDone(true);
       }
     }, 50);
     return () => clearInterval(interval);
@@ -427,7 +428,7 @@ function AnimatedCounter({ target, label }: { target: number; label: string }) {
 // ─── Main Home Component ────────────────────────────────────────
 export default function Home({ onNavigate }: HomeProps) {
   const [articles, setArticles] = useState<ArticleMeta[]>([]);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  // const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [showArticles, setShowArticles] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
 
@@ -435,14 +436,14 @@ export default function Home({ onNavigate }: HomeProps) {
     api.getArticles(1, 10).then((d) => setArticles(d.items)).catch(() => {});
   }, []);
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    setMousePos({ x: e.clientX, y: e.clientY });
-  }, []);
+  // const handleMouseMove = useCallback((e: MouseEvent) => {
+  //   setMousePos({ x: e.clientX, y: e.clientY });
+  // }, []);
 
-  useEffect(() => {
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [handleMouseMove]);
+  // useEffect(() => {
+  //   window.addEventListener("mousemove", handleMouseMove);
+  //   return () => window.removeEventListener("mousemove", handleMouseMove);
+  // }, [handleMouseMove]);
 
   useEffect(() => {
     const hero = heroRef.current;
