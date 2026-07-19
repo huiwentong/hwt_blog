@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { api } from "../api";
 import type { ArticleMeta } from "../types";
 
@@ -433,7 +433,7 @@ export default function Home({ onNavigate }: HomeProps) {
   const heroRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    api.getArticles(1, 10).then((d) => setArticles(d.items)).catch(() => {});
+    api.getArticles(1, 100).then((d) => setArticles(d.items)).catch(() => {});
   }, []);
 
   // const handleMouseMove = useCallback((e: MouseEvent) => {
@@ -561,7 +561,7 @@ export default function Home({ onNavigate }: HomeProps) {
                 <p className="text-gray-600 font-mono text-sm">// No posts yet. Stay tuned.</p>
               </div>
             ) : (
-              [...articles].reverse().map((article, i) => (
+              articles.map((article, i) => (
                 <ArticleItem
                   key={article.id}
                   article={article}

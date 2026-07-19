@@ -216,6 +216,24 @@ export default function Sidebar({ type, articleId, content, onCategoryClick, onA
           )}
         </div>
       )}
+
+      {/* Back to Top */}
+      {type === "article" && (
+        <div className="terminal-card rounded-lg p-4">
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="flex items-center justify-center gap-2 w-full py-3 text-xs font-mono
+                       text-gray-400 hover:text-accent border border-dark-700
+                       rounded-lg hover:border-accent/50 transition-all duration-300
+                       group"
+          >
+            <svg className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+            </svg>
+            <span>BACK TO TOP</span>
+          </button>
+        </div>
+      )}
     </aside>
   );
 }

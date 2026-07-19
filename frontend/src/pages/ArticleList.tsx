@@ -116,7 +116,7 @@ export default function ArticleList({ onNavigate }: ArticleListProps) {
         </div>
       ) : (
         <div className="relative pl-2">
-          {[...articles].reverse().map((article, i) => (
+          {articles.map((article, i) => (
             <ArticleCard
               key={article.id}
               article={article}
