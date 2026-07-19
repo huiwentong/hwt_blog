@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "../api";
-import type { ArticleMeta } from "../types";
+import type { ArticleMeta, SiteInfo } from "../types";
 
 interface HomeProps {
   onNavigate: (page: "home" | "articles" | "article" | "tool" | "my" | "about", id?: number) => void;
@@ -428,12 +428,14 @@ function AnimatedCounter({ target, label }: { target: number; label: string }) {
 // ─── Main Home Component ────────────────────────────────────────
 export default function Home({ onNavigate }: HomeProps) {
   const [articles, setArticles] = useState<ArticleMeta[]>([]);
+  const [siteInfo, setSiteInfo] = useState<SiteInfo | null>(null);
   // const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [showArticles, setShowArticles] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     api.getArticles(1, 100).then((d) => setArticles(d.items)).catch(() => {});
+    api.getSiteInfo().then(setSiteInfo).catch(() => {});
   }, []);
 
   // const handleMouseMove = useCallback((e: MouseEvent) => {
@@ -459,8 +461,8 @@ export default function Home({ onNavigate }: HomeProps) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const totalArticles = articles.length;
-  const totalViews = articles.reduce((sum, a) => sum + (a.views || 0), 0);
+  const totalArticles = siteInfo?.total_articles ?? 0;
+  const totalViews = siteInfo?.total_views ?? 0;
 
   return (
     <div className="relative">
