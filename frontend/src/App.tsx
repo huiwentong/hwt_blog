@@ -15,7 +15,7 @@ function App() {
   const [articleId, setArticleId] = useState<number | null>(null);
 
   useEffect(() => {
-    document.title = "HWT BLOG — 我的博客空间";
+    document.title = "惠文通的技术分享-博客空间";
   }, []);
 
   const navigate = (p: Page, id?: number) => {
@@ -50,9 +50,14 @@ function App() {
       <main className={page === "home" ? "flex-1 w-full" : "flex-1 w-full max-w-7xl mx-auto px-4 py-8"}>
         {renderPage()}
       </main>
-      <footer className="border-t border-dark-700 py-4 text-center text-xs text-gray-600">
-        <span className="text-accent">?</span> HWT BLOG v1.0 — Built with
+      <footer className="border-t border-dark-500 bg-dark-900/80 py-4 text-center text-sm text-gray-300">
+        <span className="text-accent">?</span>惠文通的技术分享 HWT BLOG v1.0 — Built with
         React + FastAPI &nbsp;|&nbsp; <span className="text-accent">_</span>
+        <div className="mt-2">
+          <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-accent transition-colors duration-200">
+            京ICP备2026044069号-1
+          </a>
+        </div>
       </footer>
     </div>
   );

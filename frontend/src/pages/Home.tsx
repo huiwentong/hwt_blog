@@ -540,7 +540,7 @@ export default function Home({ onNavigate }: HomeProps) {
       </section>
 
       <section
-        className={`relative pb-24 px-4 transition-all duration-1000 ${
+        className={`relative pb-48 px-4 transition-all duration-1000 ${
           showArticles ? "opacity-100 translate-y-0" : "opacity-0 translate-y-16"
         }`}
         style={{ zIndex: 3 }}

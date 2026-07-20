@@ -71,7 +71,7 @@ export default function ArticleDetail({ id, onBack, onNavigate }: ArticleDetailP
         setArticle(a);
         setComments(c);
         setAdjacent(adj);
-        document.title = `${a.title} — HWT BLOG`;
+        document.title = `${a.title} — 惠文通的技术分享-博客空间`;
       })
       .catch(() => {})
       .finally(() => setLoading(false));
