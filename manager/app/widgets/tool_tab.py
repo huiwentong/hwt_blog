@@ -40,7 +40,7 @@ class ToolTab(QWidget):
         self.url_input.setPlaceholderText("工具链接 URL（必填）")
 
         h5_row = QHBoxLayout()
-        self.h5_browse_btn = QPushButton("小马(H5) 选择静态h5文件...")
+        self.h5_browse_btn = QPushButton("(H5) 选择静态h5文件...")
         self.h5_browse_btn.clicked.connect(self._browse_h5)
         self.h5_status_label = QLabel("")
         h5_row.addWidget(self.h5_browse_btn)
@@ -153,7 +153,7 @@ class ToolTab(QWidget):
         self.db.signal_sync()
         self.name_input.setText(page_title)
         self.desc_input.setPlainText(f"静态H5页面: {base_name}")
-        self.url_input.setText(f"https://hwthuiwentong.com/tools/h5/{slug}")
+        self.url_input.setText(f"https://hwthuiwentong.com/api/tools/h5/{slug}")
         self.h5_status_label.setText(f"<span style='color:#00ff41'>H5页已保存，slug={slug}</span>")
 
     def _show_context_menu(self, pos):
