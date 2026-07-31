@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QSplitter, QMessageBox, QMenu,
 )
 from PySide6.QtCore import Qt
-
+from app.convert_h5 import convert_h5
 from app.validation import validate_tool
 from app.db_manager import DbManager
 import re
@@ -122,8 +122,12 @@ class ToolTab(QWidget):
         if not file_path:
             return
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                html_content = f.read()
+            try:
+                html_content = convert_h5(file_path)
+            except:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    html_content = f.read()
+                    
         except Exception as e:
             QMessageBox.critical(self, "读取失败", f"无法读取文件: {e}")
             return

@@ -1,22 +1,3 @@
-import sqlite3
-
-# conn = sqlite3.connect('D:/HWT/repository/hwt_blog/backend/data/hwt_blog.db')
-# cursor = conn.cursor()
-
-# cursor.execute("PRAGMA table_info(h5_pages)")
-# columns = cursor.fetchall()
-
-# print([col[1] for col in columns])
-# cursor.execute("SELECT * FROM h5_pages")
-# print(cursor.description)
-
-# rows = cursor.fetchall()
-
-# for row in rows:
-#     print(row)
-
-# conn.close()
-
 import os
 import re
 import base64
@@ -46,7 +27,7 @@ def file_to_data_uri(path: Path) -> str:
 
 def replace_image_reference(
     html: str,
-    root_dir: str
+    root_dir
 ) -> str:
     root_dir = Path(root_dir).resolve()
     def replace(match):
@@ -125,7 +106,7 @@ def replace_image_reference(
     return html
 
 
-def convert_h5(h5_path:str, out_name = None):
+def convert_h5(h5_path:str, out_name = None) -> str:
     h5_file = Path(h5_path)
     html = h5_file.read_text(encoding="utf-8")
     result = replace_image_reference(html,str(h5_file.parent))
@@ -133,13 +114,6 @@ def convert_h5(h5_path:str, out_name = None):
         output = h5_file.with_name(out_name)
         output.write_text(result,encoding="utf-8")
         print(f"done: {output}")
-        return True
+        return ''
     else:
         return result
-
-
-
-if __name__ == "__main__":
-
-    pass
-
