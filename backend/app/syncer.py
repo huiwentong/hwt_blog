@@ -1,4 +1,4 @@
-"""Syncer: make backend DB mirror the shared manager DB for managed tables,
+﻿"""Syncer: make backend DB mirror the shared manager DB for managed tables,
 while preserving server-only data (comments, article views)."""
 import sqlite3
 import os
@@ -113,11 +113,11 @@ def merge_from_shared(backend_db: str, force: bool = False) -> bool:
         s_h5 = s_cur.execute(
             "SELECT id, slug, content FROM h5_pages"
         ).fetchall()
-        for t in s_h5:
+        for h in s_h5:
             b_cur.execute(
-                """INSERT INTO tools (id, slug, content)
+                """INSERT INTO h5_pages (id, slug, content)
                     VALUES (?, ?, ?)""",
-                t,
+                h,
             )
 
         # 6. Re-insert media from shared
