@@ -9,6 +9,8 @@ from PySide6.QtCore import Qt
 
 from app.validation import validate_tool
 from app.db_manager import DbManager
+import re
+import os
 
 TOOL_CATEGORIES = ["utility", "developer", "design", "database", "network"]
 ICONS = ["🔧", "📝", "📸", "🎨", "📋", "🗄️", "🌐", "⚙️", "🛠️", "🧰"]
@@ -36,6 +38,14 @@ class ToolTab(QWidget):
 
         self.url_input = QLineEdit()
         self.url_input.setPlaceholderText("工具链接 URL（必填）")
+
+        h5_row = QHBoxLayout()
+        self.h5_browse_btn = QPushButton("小马(H5) 选择静态h5文件...")
+        self.h5_browse_btn.clicked.connect(self._browse_h5)
+        self.h5_status_label = QLabel("")
+        h5_row.addWidget(self.h5_browse_btn)
+        h5_row.addWidget(self.h5_status_label, 1)
+        form_layout.addLayout(h5_row)
 
         row = QHBoxLayout()
         row.addWidget(QLabel("图标:"))
@@ -96,6 +106,52 @@ class ToolTab(QWidget):
         splitter.setSizes([300, 250])
         main_layout.addWidget(splitter)
 
+    def _slugify(self, name: str) -> str:
+        s = name.lower()
+        s = re.sub(r"[^\w\s-]", "", s)
+        s = re.sub(r"[\s_]+", "-", s)
+        s = s.strip("-")
+        return s if s else "h5-page"
+
+    def _browse_h5(self):
+        from PySide6.QtWidgets import QFileDialog
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "选择静态H5文件", "",
+            "HTML 文件 (*.html *.htm);;所有文件(*.*)",
+        )
+        if not file_path:
+            return
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                html_content = f.read()
+        except Exception as e:
+            QMessageBox.critical(self, "读取失败", f"无法读取文件: {e}")
+            return
+        title_match = __import__("re").search(chr(60)+"title[^"+chr(62)+"]*"+chr(62)+"(.*?)"+chr(60)+"/title"+chr(62), html_content, __import__("re").IGNORECASE | __import__("re").DOTALL)
+        base_name = __import__("os").path.splitext(__import__("os").path.basename(file_path))[0]
+        page_title = title_match.group(1).strip() if title_match else base_name
+        slug = self._slugify(base_name)
+        try:
+            self.db.add_h5_page(slug, html_content)
+        except ValueError:
+            idx = 2
+            while True:
+                new_slug = f"{slug}-{idx}"
+                try:
+                    self.db.add_h5_page(new_slug, html_content)
+                    slug = new_slug
+                    break
+                except ValueError:
+                    idx += 1
+        except Exception as e:
+            QMessageBox.critical(self, "保存失败", f"H5页面保存失败: {e}")
+            return
+        self.db.signal_sync()
+        self.name_input.setText(page_title)
+        self.desc_input.setPlainText(f"静态H5页面: {base_name}")
+        self.url_input.setText(f"https://hwthuiwentong.com/tools/h5/{slug}")
+        self.h5_status_label.setText(f"<span style='color:#00ff41'>H5页已保存，slug={slug}</span>")
+
     def _show_context_menu(self, pos):
         item = self.table.itemAt(pos)
         if not item:
@@ -115,13 +171,13 @@ class ToolTab(QWidget):
             QMenu::item { padding: 6px 24px; border-radius: 2px; }
             QMenu::item:selected { background-color: #ff1744; color: #ffffff; }
         """)
-        delete_action = menu.addAction("❌ 删除工具")
+        delete_action = menu.addAction("删除工具")
         action = menu.exec(self.table.viewport().mapToGlobal(pos))
 
         if action == delete_action:
             reply = QMessageBox.question(
                 self, "确认删除",
-                f"确定要删除工具 \"{name}\" (ID: {record_id}) 吗？\n此操作不可撤销。",
+                f"确定要删除工具 \u201c{name}\u201d (ID: {record_id}) 吗？\n此操作不可撤销。",
                 QMessageBox.Yes | QMessageBox.No,
                 QMessageBox.No,
             )
@@ -133,7 +189,6 @@ class ToolTab(QWidget):
                     QMessageBox.information(self, "完成", "工具已删除。")
                 except Exception as e:
                     QMessageBox.critical(self, "错误", f"删除失败: {e}")
-
     def _submit(self):
         name = self.name_input.text()
         desc = self.desc_input.toPlainText()
@@ -172,6 +227,7 @@ class ToolTab(QWidget):
         self.icon_combo.setCurrentIndex(0)
         self.category_combo.setCurrentIndex(0)
         self.feedback_label.clear()
+        self.h5_status_label.clear()
 
     def _refresh_table(self):
         rows = self.db.get_recent_tools()

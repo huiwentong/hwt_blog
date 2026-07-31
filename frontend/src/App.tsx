@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Navbar from "./components/Navbar";
 import MusicPlayer from "./components/MusicPlayer";
 import Home from "./pages/Home";
+import beianIcon from "./assets/45bd15b41889aff0c91de802c6f86ef7.png";
 import ArticleList from "./pages/ArticleList";
 import ArticleDetail from "./pages/ArticleDetail";
 import Tool from "./pages/Tool";
@@ -53,9 +54,17 @@ function App() {
       <footer className="border-t border-dark-500 bg-dark-900/80 py-4 text-center text-sm text-gray-300">
         <span className="text-accent">?</span>惠文通的技术分享 HWT BLOG v1.0 — Built with
         React + FastAPI &nbsp;|&nbsp; <span className="text-accent">_</span>
-        <div className="mt-2">
+        <div className="mt-2 flex flex-wrap justify-center items-center gap-2">
           <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-accent transition-colors duration-200">
             京ICP备2026044069号-1
+          </a>&nbsp;&nbsp;
+          <img
+            src={beianIcon}
+            alt="公安备案图标"
+            className="w-4 h-4"
+          />
+          <a href="https://beian.mps.gov.cn/#/query/webSearch" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-accent transition-colors duration-200">
+            京公网安备11010502062039号
           </a>
         </div>
       </footer>

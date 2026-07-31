@@ -39,6 +39,14 @@ class Comment(Base):
     article = relationship("Article", back_populates="comments")
 
 
+class H5Page(Base):
+    __tablename__ = "h5_pages"
+
+    id = Column(Integer, primary_key=True)
+    slug = Column(String(100), unique=True, index=True)
+    content = Column(Text)
+
+
 class ToolItem(Base):
     __tablename__ = "tools"
 

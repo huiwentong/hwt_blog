@@ -66,6 +66,15 @@ class DbManager:
             )
         """)
 
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS h5_pages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                slug VARCHAR(100) UNIQUE NOT NULL,
+                content TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
         # Migration: add ip_address / user_agent if missing
         try:
             cursor.execute("ALTER TABLE comments ADD COLUMN ip_address VARCHAR(45) DEFAULT ''")
@@ -182,6 +191,55 @@ class DbManager:
         conn.close()
         return rows
 
+    # ── H5 Pages ──
+    def add_h5_page(self, slug: str, content: str) -> int:
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "INSERT INTO h5_pages (slug, content) VALUES (?, ?)",
+                (slug, content),
+            )
+            conn.commit()
+            new_id = cursor.lastrowid
+        except sqlite3.IntegrityError:
+            conn.close()
+            raise ValueError(f"Slug '{slug}' already exists")
+        conn.close()
+        return new_id
+
+    def get_h5_page_by_slug(self, slug: str) -> dict | None:
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT id, slug, content, created_at FROM h5_pages WHERE slug = ?",
+            (slug,),
+        )
+        row = cursor.fetchone()
+        conn.close()
+        return dict(row) if row else None
+
+    def get_recent_h5_pages(self, limit: int = 50):
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT id, slug, created_at FROM h5_pages ORDER BY id DESC LIMIT ?",
+            (limit,),
+        )
+        rows = [dict(r) for r in cursor.fetchall()]
+        conn.close()
+        return rows
+
+    def delete_h5_page(self, h5_id: int) -> bool:
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM h5_pages WHERE id = ?", (h5_id,))
+        deleted = cursor.rowcount > 0
+        conn.commit()
+        conn.close()
+        return deleted
 
     # ── Delete ──
     def delete_article(self, article_id: int) -> bool:
@@ -231,7 +289,9 @@ class DbManager:
         tools = cursor.fetchone()[0]
         cursor.execute("SELECT COUNT(*) FROM media")
         media = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM h5_pages")
+        h5_pages = cursor.fetchone()[0]
         cursor.execute("SELECT SUM(views) FROM articles")
         views = cursor.fetchone()[0] or 0
         conn.close()
-        return {"articles": articles, "tools": tools, "media": media, "views": views}
+        return {"articles": articles, "tools": tools, "media": media, "h5_pages": h5_pages, "views": views}
