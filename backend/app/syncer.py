@@ -71,6 +71,7 @@ def merge_from_shared(backend_db: str, force: bool = False) -> bool:
         b_cur.execute("DELETE FROM comments")
         b_cur.execute("DELETE FROM media")
         b_cur.execute("DELETE FROM tools")
+        b_cur.execute("DELETE FROM h5_pages")
         b_cur.execute("DELETE FROM articles")
 
         # 3. Re-insert articles from shared
@@ -106,6 +107,16 @@ def merge_from_shared(backend_db: str, force: bool = False) -> bool:
             b_cur.execute(
                 """INSERT INTO tools (id, name, description, url, icon, category)
                    VALUES (?, ?, ?, ?, ?, ?)""",
+                t,
+            )
+            
+        s_h5 = s_cur.execute(
+            "SELECT id, slug, content FROM h5_pages"
+        ).fetchall()
+        for t in s_h5:
+            b_cur.execute(
+                """INSERT INTO tools (id, slug, content)
+                    VALUES (?, ?, ?)""",
                 t,
             )
 
