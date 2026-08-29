@@ -9,7 +9,7 @@ _default_db_dir = pathlib.Path(__file__).resolve().parent.parent / "data"
 _db_dir = pathlib.Path(os.environ.get("DB_DIR", str(_default_db_dir)))
 _db_dir.mkdir(parents=True, exist_ok=True)
 _db_path = _db_dir / "hwt_blog.db"
-
+print(f"Using database at {_db_path.as_posix()}")
 DATABASE_URL = f"sqlite:///{_db_path.as_posix()}"
 
 engine = create_engine(
