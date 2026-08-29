@@ -7,8 +7,7 @@ from contextlib import asynccontextmanager
 from app.database import engine, get_db, Base
 from app.routers import articles, comments, tools, media
 from app.schemas import SiteInfoResponse, CategoryCount
-from app.models import Article, Comment
-from app.syncer import merge_from_shared, get_db_path
+from app.models import Article, Comment, ToolItem, MediaItem, H5Page
 
 
 def run_migration():
@@ -37,35 +36,6 @@ def run_migration():
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     run_migration()
-
-    import threading
-    import time
-    import os
-    db_path = get_db_path()
-    shared_db = r"Z:\github\db\hwt_blog.db"
-
-    # Initial sync: if shared DB exists, merge immediately (no signal file needed)
-    if os.path.isfile(shared_db):
-        print(f"[syncer] Shared DB found, performing initial sync...")
-        try:
-            if merge_from_shared(db_path, force=True):
-                print("[syncer] Initial sync completed")
-        except Exception as e:
-            print(f"[syncer] Initial sync failed: {e}")
-
-    # Background thread: watch for signal files
-    def _watch_loop():
-        while True:
-            try:
-                if merge_from_shared(db_path, force=True):
-                    print("[syncer] Database merged from shared folder")
-            except Exception:
-                pass
-            time.sleep(5)
-
-    watcher = threading.Thread(target=_watch_loop, daemon=True)
-    watcher.start()
-    print(f"[syncer] Watching for DB sync signals every 5s")
     yield
 
 
@@ -103,6 +73,17 @@ def get_site_info(db: Session = Depends(get_db)):
         total_comments=total_comments,
         categories=categories,
     )
+
+
+@app.get("/api/stats")
+def stats(db: Session = Depends(get_db)):
+    return {
+        "articles": db.query(func.count(Article.id)).scalar() or 0,
+        "tools": db.query(func.count(ToolItem.id)).scalar() or 0,
+        "media": db.query(func.count(MediaItem.id)).scalar() or 0,
+        "h5_pages": db.query(func.count(H5Page.id)).scalar() or 0,
+        "views": db.query(func.coalesce(func.sum(Article.views), 0)).scalar() or 0,
+    }
 
 
 @app.get("/api/health")

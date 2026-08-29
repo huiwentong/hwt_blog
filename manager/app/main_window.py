@@ -1,21 +1,17 @@
-"""Main window — assembles all tabs with database selector."""
+"""Main window — assembles all tabs with a server connection."""
 import os
 
 from PySide6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QTabWidget,
-    QLabel, QStatusBar, QMessageBox,
+    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTabWidget,
+    QLabel, QLineEdit, QPushButton, QStatusBar,
 )
 from PySide6.QtCore import Qt
 
-from app.db_manager import DbManager
+from app.db_manager import DbManager, DEFAULT_API_BASE
 from app.widgets.style import DARK_STYLE
-from app.widgets.db_selector import DbSelector
 from app.widgets.article_tab import ArticleTab
 from app.widgets.tool_tab import ToolTab
 from app.widgets.media_tab import MediaTab
-
-
-DEFAULT_DB = os.path.abspath('Z:/github/db/hwt_blog.db')
 
 
 class MainWindow(QMainWindow):
@@ -31,10 +27,16 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central)
         main_layout = QVBoxLayout(central)
 
-        # ── DB selector ──
-        self.db_selector = DbSelector(default_path=DEFAULT_DB)
-        self.db_selector.db_changed.connect(self._on_db_changed)
-        main_layout.addWidget(self.db_selector)
+        # ── server connection row ──
+        conn_row = QHBoxLayout()
+        conn_row.addWidget(QLabel("服务器:"))
+        self.url_input = QLineEdit(DEFAULT_API_BASE)
+        self.url_input.setPlaceholderText("http://62.234.134.129:8000/api")
+        conn_row.addWidget(self.url_input, 1)
+        self.connect_btn = QPushButton("🔌 连接")
+        self.connect_btn.clicked.connect(lambda: self._connect())
+        conn_row.addWidget(self.connect_btn)
+        main_layout.addLayout(conn_row)
 
         # ── connection status ──
         self.status_label = QLabel()
@@ -43,44 +45,31 @@ class MainWindow(QMainWindow):
 
         # ── tabs ──
         self.tabs = QTabWidget()
-        self.tab_article = QWidget()
-        self.tab_tool = QWidget()
-        self.tab_media = QWidget()
-        self.tabs.addTab(self.tab_article, "📝 文章")
-        self.tabs.addTab(self.tab_tool, "🔧 工具")
-        self.tabs.addTab(self.tab_media, "🎵 媒体")
         main_layout.addWidget(self.tabs, 1)
 
         # ── status bar ──
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
-        self.status_bar.showMessage("就绪 — 请选择数据库文件")
+        self.status_bar.showMessage("就绪 — 请连接服务器")
 
-        # Try default path
-        if os.path.isfile(DEFAULT_DB):
-            self._connect_db(DEFAULT_DB)
+        # Try default server
+        self._connect(DEFAULT_API_BASE)
 
-    def _on_db_changed(self, path: str):
-        if not path:
+    def _connect(self, base_url: str | None = None):
+        base_url = (base_url or self.url_input.text().strip()).rstrip("/")
+        if not base_url:
             return
-        if not os.path.isfile(path):
-            self.status_label.setText(
-                f"<span style='color:#ffab00'>⚠ 文件不存在: {path}</span>"
-            )
-            return
-        self._connect_db(path)
-
-    def _connect_db(self, path: str):
         try:
-            self._db_manager = DbManager(path)
+            self._db_manager = DbManager(base_url)
             stats = self._db_manager.get_stats()
             self.status_label.setText(
-                f"<span style='color:#00ff41'>✓ 已连接: {path}</span>"
+                f"<span style='color:#00ff41'>✓ 已连接: {base_url}</span>"
             )
             self.status_bar.showMessage(
                 f"📊 文章: {stats['articles']}  |  "
                 f"工具: {stats['tools']}  |  "
                 f"媒体: {stats['media']}  |  "
+                f"H5: {stats['h5_pages']}  |  "
                 f"总浏览量: {stats['views']}"
             )
             self._rebuild_tabs()
@@ -94,10 +83,8 @@ class MainWindow(QMainWindow):
         """Recreate the tab contents with the current db_manager."""
         if not self._db_manager:
             return
-        # Remove old tabs
         for i in range(self.tabs.count() - 1, -1, -1):
             self.tabs.removeTab(i)
-        # Add new tabs
         self.tabs.addTab(ArticleTab(self._db_manager), "📝 文章")
         self.tabs.addTab(ToolTab(self._db_manager), "🔧 工具")
         self.tabs.addTab(MediaTab(self._db_manager), "🎵 媒体")

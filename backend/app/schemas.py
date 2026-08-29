@@ -93,3 +93,61 @@ class SiteInfoResponse(BaseModel):
     total_views: int
     total_comments: int
     categories: list[CategoryCount]
+
+# ---- Update payloads (manager CRUD) ----
+class ArticleUpdate(BaseModel):
+    title: str | None = None
+    summary: str | None = None
+    content: str | None = None
+    author: str | None = None
+    category: str | None = None
+    tags: list[str] | None = None
+
+
+# ---- Tool ----
+class ToolCreate(BaseModel):
+    name: str
+    description: str
+    url: str
+    icon: str = "\U0001F527"
+    category: str = "utility"
+
+
+class ToolUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    url: str | None = None
+    icon: str | None = None
+    category: str | None = None
+
+
+# ---- Media ----
+class MediaCreate(BaseModel):
+    title: str
+    type: str
+    description: str = ""
+    url: str = ""
+    cover: str = ""
+
+
+class MediaUpdate(BaseModel):
+    title: str | None = None
+    type: str | None = None
+    description: str | None = None
+    url: str | None = None
+    cover: str | None = None
+
+
+# ---- H5 Page ----
+class H5PageCreate(BaseModel):
+    slug: str
+    content: str
+
+
+class H5PageResponse(BaseModel):
+    id: int
+    slug: str
+    content: str
+
+    model_config = {"from_attributes": True}
+

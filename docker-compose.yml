@@ -7,9 +7,10 @@
     restart: unless-stopped
     ports:
       - "8000:8000"
+    environment:
+      - DB_DIR=/app/data
     volumes:
-      - ./backend/data:/app/data
-      - /mnt/z/github/db:/mnt/z/github/db
+      - hwt-db-data:/app/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
       interval: 10s
@@ -34,5 +35,6 @@
       backend:
         condition: service_healthy
 
-# volumes:
-#   hwt-data:
+volumes:
+  hwt-db-data:
+    name: hwt-db-data

@@ -109,6 +109,22 @@ curl -s http://localhost:8080 | grep -o "index-[A-Za-z0-9]*\.js"
 
 访问 http://localhost
 
+#### 数据库存储（Docker Volume）
+
+后端 SQLite 数据库存放在 Docker 永久命名卷 `hwt-db-data` 中（挂载到容器内 `/app/data`），后端通过环境变量 `DB_DIR=/app/data` 从该卷读取数据库文件，不再依赖 `/mnt/z/github/db` 共享目录同步。
+
+- 首次 `docker compose up` 时，如果卷为空，Docker 会把镜像内 `/app/data` 下的 `hwt_blog.db`（即构建时 `backend/data/hwt_blog.db`）自动复制进卷中。
+- 卷的生命周期独立于容器：`docker compose down` 后数据仍在，删除/重建容器不会丢失数据库。
+- 如需手动把现有数据库灌入卷中（例如服务器上没有该文件时）：
+
+```bash
+# 先把现有 backend/data/hwt_blog.db 放到服务器仓库对应位置，然后：
+docker run --rm -v hwt-db-data:/app/data -v $(pwd)/backend/data:/seed:ro alpine sh -c "cp -n /seed/hwt_blog.db /app/data/ 2>/dev/null || true"
+
+# 查看卷内文件
+docker volume inspect hwt-db-data
+```
+
 ### 方式二: 本地开发
 
 #### 后端
@@ -136,7 +152,7 @@ uv sync
 uv run main.py         # 或双击 start.bat
 ```
 
-默认连接 `../backend/hwt_blog.db`，也可通过「浏览…」切换其他 SQLite 文件。
+默认连接 `http://62.234.134.129:8000/api`（后端 REST API），可在连接框修改，或用环境变量 `HWT_API_BASE` 覆盖；文章的增删查、工具的增删查、媒体的增删查均通过该 API 完成，不再直接读写本地 SQLite 文件。
 
 ---
 

@@ -1,94 +1,65 @@
-"""Database manager 閳?CRUD operations for HWT BLOG SQLite database."""
-import sqlite3
+"""API client for the HWT BLOG manager.
+
+All article / tool / media / h5-page operations go through the backend REST
+API over the network instead of touching a local SQLite file.
+"""
+import json
 import os
-from datetime import datetime, timezone
-from typing import Optional
+import urllib.error
+import urllib.request
+
+DEFAULT_API_BASE = os.environ.get("HWT_API_BASE", "http://62.234.134.129:8000/api")
+
+
+class ApiError(Exception):
+    """Raised when the backend returns an error or is unreachable."""
 
 
 class DbManager:
-    def __init__(self, db_path: str):
-        self.db_path = db_path
-        self.ensure_tables()
+    """Thin HTTP client matching the old SQLite DbManager method surface."""
 
-    def ensure_tables(self):
-        """Create tables if they don't exist (mirrors backend schema)."""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
+    def __init__(self, base_url: str = DEFAULT_API_BASE):
+        self.base_url = base_url.rstrip("/")
+        # Fail fast with a readable error if the server is unreachable.
+        self._request("GET", "/health")
 
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS articles (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title VARCHAR(200) NOT NULL,
-                summary TEXT NOT NULL,
-                content TEXT NOT NULL,
-                author VARCHAR(50) DEFAULT 'HWT',
-                category VARCHAR(50) DEFAULT 'General',
-                tags TEXT DEFAULT '',
-                views INTEGER DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
+    # ---- HTTP helpers -------------------------------------------------
 
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS comments (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                article_id INTEGER NOT NULL,
-                author VARCHAR(50) NOT NULL,
-                content TEXT NOT NULL,
-                ip_address VARCHAR(45) DEFAULT '',
-                user_agent TEXT DEFAULT '',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (article_id) REFERENCES articles(id)
-            )
-        """)
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS tools (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name VARCHAR(100) NOT NULL,
-                description TEXT NOT NULL,
-                url VARCHAR(500) NOT NULL,
-                icon VARCHAR(10) DEFAULT '棣冩暋',
-                category VARCHAR(50) DEFAULT 'utility'
-            )
-        """)
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS media (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title VARCHAR(200) NOT NULL,
-                type VARCHAR(20) NOT NULL,
-                description TEXT DEFAULT '',
-                url VARCHAR(500) DEFAULT '',
-                cover VARCHAR(500) DEFAULT '',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS h5_pages (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                slug VARCHAR(100) UNIQUE NOT NULL,
-                content TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-
-        # Migration: add ip_address / user_agent if missing
+    def _request(self, method: str, path: str, payload: dict | None = None):
+        url = f"{self.base_url}{path}"
+        data = None
+        headers = {}
+        if payload is not None:
+            data = json.dumps(payload).encode("utf-8")
+            headers["Content-Type"] = "application/json"
+        req = urllib.request.Request(url, data=data, headers=headers, method=method)
         try:
-            cursor.execute("ALTER TABLE comments ADD COLUMN ip_address VARCHAR(45) DEFAULT ''")
-        except sqlite3.OperationalError:
-            pass  # column already exists
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                body = resp.read()
+                if not body:
+                    return None
+                return json.loads(body.decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            detail = self._extract_detail(e)
+            if e.code == 409:
+                raise ValueError(detail or "Resource already exists (409)") from e
+            raise ApiError(f"Request failed ({e.code}): {detail or e.reason}") from e
+        except urllib.error.URLError as e:
+            raise ApiError(f"Cannot reach server {self.base_url}: {e.reason}") from e
+
+    @staticmethod
+    def _extract_detail(err: urllib.error.HTTPError) -> str:
         try:
-            cursor.execute("ALTER TABLE comments ADD COLUMN user_agent TEXT DEFAULT ''")
-        except sqlite3.OperationalError:
-            pass
+            data = json.loads(err.read().decode("utf-8"))
+            detail = data.get("detail")
+            if isinstance(detail, list):
+                return "; ".join(str(d.get("msg", d)) for d in detail)
+            return str(detail or "")
+        except Exception:
+            return ""
 
-        conn.commit()
-        conn.close()
+    # ---- Articles -----------------------------------------------------
 
-    # 閳光偓閳光偓 Articles 閳光偓閳光偓
     def add_article(
         self,
         title: str,
@@ -98,66 +69,73 @@ class DbManager:
         tags: str,
         author: str = "HWT",
     ) -> int:
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        now = datetime.now(timezone.utc).isoformat()
-        cursor.execute(
-            "INSERT INTO articles (title, summary, content, author, category, tags, views, created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (title, summary, content, author, category, tags, 0, now, now),
-        )
-        conn.commit()
-        new_id = cursor.lastrowid
-        conn.close()
-        return new_id
+        payload = {
+            "title": title,
+            "summary": summary,
+            "content": content,
+            "author": author,
+            "category": category,
+            "tags": [t.strip() for t in tags.split(",") if t.strip()] if tags else [],
+        }
+        data = self._request("POST", "/articles", payload)
+        return data["id"]
 
     def get_recent_articles(self, limit: int = 50):
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT id, title, summary, category, tags, author, views, created_at "
-            "FROM articles ORDER BY created_at DESC LIMIT ?",
-            (limit,),
-        )
-        rows = [dict(r) for r in cursor.fetchall()]
-        conn.close()
+        data = self._request("GET", f"/articles?page=1&limit={limit}") or {}
+        rows = []
+        for a in data.get("items", []):
+            rows.append({
+                "id": a["id"],
+                "title": a["title"],
+                "summary": a.get("summary", ""),
+                "category": a.get("category", ""),
+                "tags": ",".join(a.get("tags") or []),
+                "author": a.get("author", ""),
+                "views": a.get("views", 0),
+                "created_at": a.get("created_at", ""),
+            })
         return rows
 
-    # 閳光偓閳光偓 Tools 閳光偓閳光偓
+    def delete_article(self, article_id: int) -> bool:
+        self._request("DELETE", f"/articles/{article_id}")
+        return True
+
+    # ---- Tools --------------------------------------------------------
+
     def add_tool(
         self,
         name: str,
         description: str,
         url: str,
         category: str,
-        icon: str = "棣冩暋",
+        icon: str = "\U0001F527",
     ) -> int:
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO tools (name, description, url, icon, category) VALUES (?, ?, ?, ?, ?)",
-            (name, description, url, icon, category),
-        )
-        conn.commit()
-        new_id = cursor.lastrowid
-        conn.close()
-        return new_id
+        data = self._request("POST", "/tools", {
+            "name": name,
+            "description": description,
+            "url": url,
+            "icon": icon,
+            "category": category,
+        })
+        return data["id"]
 
     def get_recent_tools(self, limit: int = 50):
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT id, name, description, url, icon, category "
-            "FROM tools ORDER BY id DESC LIMIT ?",
-            (limit,),
-        )
-        rows = [dict(r) for r in cursor.fetchall()]
-        conn.close()
-        return rows
+        items = self._request("GET", "/tools") or []
+        return [{
+            "id": t["id"],
+            "name": t["name"],
+            "description": t.get("description", ""),
+            "url": t.get("url", ""),
+            "icon": t.get("icon", ""),
+            "category": t.get("category", ""),
+        } for t in items]
 
-    # 閳光偓閳光偓 Media 閳光偓閳光偓
+    def delete_tool(self, tool_id: int) -> bool:
+        self._request("DELETE", f"/tools/{tool_id}")
+        return True
+
+    # ---- Media --------------------------------------------------------
+
     def add_media(
         self,
         title: str,
@@ -166,132 +144,61 @@ class DbManager:
         url: str = "",
         cover: str = "",
     ) -> int:
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        now = datetime.now(timezone.utc).isoformat()
-        cursor.execute(
-            "INSERT INTO media (title, type, description, url, cover, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-            (title, type_, description, url, cover, now),
-        )
-        conn.commit()
-        new_id = cursor.lastrowid
-        conn.close()
-        return new_id
+        data = self._request("POST", "/media", {
+            "title": title,
+            "type": type_,
+            "description": description,
+            "url": url,
+            "cover": cover,
+        })
+        return data["id"]
 
     def get_recent_media(self, limit: int = 50):
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT id, title, type, description, url, cover, created_at "
-            "FROM media ORDER BY created_at DESC LIMIT ?",
-            (limit,),
-        )
-        rows = [dict(r) for r in cursor.fetchall()]
-        conn.close()
+        data = self._request("GET", f"/media?page=1&limit={limit}") or {}
+        rows = []
+        for m in data.get("items", []):
+            rows.append({
+                "id": m["id"],
+                "title": m["title"],
+                "type": m["type"],
+                "description": m.get("description", ""),
+                "url": m.get("url", ""),
+                "cover": m.get("cover", ""),
+                "created_at": m.get("created_at", ""),
+            })
         return rows
-
-    # ── H5 Pages ──
-    def add_h5_page(self, slug: str, content: str) -> int:
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        try:
-            cursor.execute(
-                "INSERT INTO h5_pages (slug, content) VALUES (?, ?)",
-                (slug, content),
-            )
-            conn.commit()
-            new_id = cursor.lastrowid
-        except sqlite3.IntegrityError:
-            conn.close()
-            raise ValueError(f"Slug '{slug}' already exists")
-        conn.close()
-        return new_id
-
-    def get_h5_page_by_slug(self, slug: str) -> dict | None:
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT id, slug, content, created_at FROM h5_pages WHERE slug = ?",
-            (slug,),
-        )
-        row = cursor.fetchone()
-        conn.close()
-        return dict(row) if row else None
-
-    def get_recent_h5_pages(self, limit: int = 50):
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT id, slug, created_at FROM h5_pages ORDER BY id DESC LIMIT ?",
-            (limit,),
-        )
-        rows = [dict(r) for r in cursor.fetchall()]
-        conn.close()
-        return rows
-
-    def delete_h5_page(self, h5_id: int) -> bool:
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM h5_pages WHERE id = ?", (h5_id,))
-        deleted = cursor.rowcount > 0
-        conn.commit()
-        conn.close()
-        return deleted
-
-    # ── Delete ──
-    def delete_article(self, article_id: int) -> bool:
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM articles WHERE id = ?", (article_id,))
-        deleted = cursor.rowcount > 0
-        conn.commit()
-        conn.close()
-        return deleted
-
-    def delete_tool(self, tool_id: int) -> bool:
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM tools WHERE id = ?", (tool_id,))
-        deleted = cursor.rowcount > 0
-        conn.commit()
-        conn.close()
-        return deleted
 
     def delete_media(self, media_id: int) -> bool:
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM media WHERE id = ?", (media_id,))
-        deleted = cursor.rowcount > 0
-        conn.commit()
-        conn.close()
-        return deleted
-    def signal_sync(self):
-        """Create sync signal file for the backend watcher."""
-        import os
-        signal_dir = "Z:/github/db"
-        if os.path.isdir(signal_dir):
-            signal_file = os.path.join(signal_dir, "new.txt")
-            try:
-                with open(signal_file, "w") as f:
-                    f.write("sync")
-            except Exception:
-                pass  # ignore if Z: is not available
+        self._request("DELETE", f"/media/{media_id}")
+        return True
+
+    # ---- H5 pages -----------------------------------------------------
+
+    def add_h5_page(self, slug: str, content: str) -> int:
+        data = self._request("POST", "/tools/h5", {"slug": slug, "content": content})
+        return data["id"]
+
+    def get_h5_page_by_slug(self, slug: str) -> dict | None:
+        for page in self._request("GET", "/tools/h5") or []:
+            if page["slug"] == slug:
+                return page
+        return None
+
+    def get_recent_h5_pages(self, limit: int = 50):
+        return self._request("GET", "/tools/h5") or []
+
+    def delete_h5_page(self, h5_id: int) -> bool:
+        self._request("DELETE", f"/tools/h5/{h5_id}")
+        return True
+
+    # ---- Stats --------------------------------------------------------
 
     def get_stats(self) -> dict:
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM articles")
-        articles = cursor.fetchone()[0]
-        cursor.execute("SELECT COUNT(*) FROM tools")
-        tools = cursor.fetchone()[0]
-        cursor.execute("SELECT COUNT(*) FROM media")
-        media = cursor.fetchone()[0]
-        cursor.execute("SELECT COUNT(*) FROM h5_pages")
-        h5_pages = cursor.fetchone()[0]
-        cursor.execute("SELECT SUM(views) FROM articles")
-        views = cursor.fetchone()[0] or 0
-        conn.close()
-        return {"articles": articles, "tools": tools, "media": media, "h5_pages": h5_pages, "views": views}
+        data = self._request("GET", "/stats") or {}
+        return {
+            "articles": data.get("articles", 0),
+            "tools": data.get("tools", 0),
+            "media": data.get("media", 0),
+            "h5_pages": data.get("h5_pages", 0),
+            "views": data.get("views", 0),
+        }

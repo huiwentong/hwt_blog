@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from datetime import datetime, timezone
 from app.database import get_db
 from app.models import Article, Comment
-from app.schemas import ArticleResponse, ArticleListResponse
+from app.schemas import ArticleResponse, ArticleListResponse, ArticleCreate, ArticleUpdate
 
 router = APIRouter(prefix="/articles", tags=["articles"])
 
@@ -106,3 +107,64 @@ def get_adjacent_articles(article_id: int, db: Session = Depends(get_db)):
         "prev": {"id": prev_article.id, "title": prev_article.title} if prev_article else None,
         "next": {"id": next_article.id, "title": next_article.title} if next_article else None,
     }
+
+def _article_response(a: Article, db: Session) -> ArticleResponse:
+    comment_count = db.query(func.count(Comment.id)).filter(Comment.article_id == a.id).scalar() or 0
+    return ArticleResponse(
+        id=a.id,
+        title=a.title,
+        summary=a.summary,
+        content=a.content,
+        author=a.author,
+        category=a.category,
+        tags=a.tags_list,
+        views=a.views,
+        comment_count=comment_count,
+        created_at=a.created_at,
+        updated_at=a.updated_at,
+    )
+
+
+@router.post("", response_model=ArticleResponse, status_code=201)
+def create_article(payload: ArticleCreate, db: Session = Depends(get_db)):
+    article = Article(
+        title=payload.title,
+        summary=payload.summary,
+        content=payload.content,
+        author=payload.author,
+        category=payload.category,
+        tags=",".join(payload.tags),
+    )
+    db.add(article)
+    db.commit()
+    db.refresh(article)
+    return _article_response(article, db)
+
+
+@router.patch("/{article_id}", response_model=ArticleResponse)
+def update_article(article_id: int, payload: ArticleUpdate, db: Session = Depends(get_db)):
+    article = db.query(Article).filter(Article.id == article_id).first()
+    if not article:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Article not found")
+    data = payload.model_dump(exclude_unset=True)
+    if "tags" in data and data["tags"] is not None:
+        data["tags"] = ",".join(data["tags"])
+    for field, value in data.items():
+        setattr(article, field, value)
+    article.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(article)
+    return _article_response(article, db)
+
+
+@router.delete("/{article_id}")
+def delete_article(article_id: int, db: Session = Depends(get_db)):
+    article = db.query(Article).filter(Article.id == article_id).first()
+    if not article:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Article not found")
+    db.delete(article)  # cascade removes comments
+    db.commit()
+    return {"ok": True}
+

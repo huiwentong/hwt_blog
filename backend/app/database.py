@@ -1,9 +1,12 @@
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
+import os
 import pathlib
 
-# Ensure the data directory exists (works locally and in Docker)
-_db_dir = pathlib.Path(__file__).resolve().parent.parent / "data"
+# DB directory: DB_DIR points to the Docker named volume (/app/data) in
+# production; local development falls back to backend/data.
+_default_db_dir = pathlib.Path(__file__).resolve().parent.parent / "data"
+_db_dir = pathlib.Path(os.environ.get("DB_DIR", str(_default_db_dir)))
 _db_dir.mkdir(parents=True, exist_ok=True)
 _db_path = _db_dir / "hwt_blog.db"
 

@@ -150,7 +150,6 @@ class ToolTab(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "保存失败", f"H5页面保存失败: {e}")
             return
-        self.db.signal_sync()
         self.name_input.setText(page_title)
         self.desc_input.setPlainText(f"静态H5页面: {base_name}")
         self.url_input.setText(f"https://hwthuiwentong.com/api/tools/h5/{slug}")
@@ -188,7 +187,6 @@ class ToolTab(QWidget):
             if reply == QMessageBox.Yes:
                 try:
                     self.db.delete_tool(record_id)
-                    self.db.signal_sync()
                     self._refresh_table()
                     QMessageBox.information(self, "完成", "工具已删除。")
                 except Exception as e:
@@ -216,7 +214,6 @@ class ToolTab(QWidget):
 
         try:
             self.db.add_tool(name, desc, url, category, icon)
-            self.db.signal_sync()
             parts.append("<span style='color:#00ff41'>✓ 工具添加成功！</span>")
             self.feedback_label.setText("<br>".join(parts))
             self._clear_form()
