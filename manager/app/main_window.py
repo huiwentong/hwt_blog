@@ -31,7 +31,7 @@ class MainWindow(QMainWindow):
         conn_row = QHBoxLayout()
         conn_row.addWidget(QLabel("服务器:"))
         self.url_input = QLineEdit(DEFAULT_API_BASE)
-        self.url_input.setPlaceholderText("http://62.234.134.129:8000/api")
+        self.url_input.setPlaceholderText("https://hethuiwentong.com")
         conn_row.addWidget(self.url_input, 1)
         self.connect_btn = QPushButton("🔌 连接")
         self.connect_btn.clicked.connect(lambda: self._connect())

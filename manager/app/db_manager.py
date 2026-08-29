@@ -8,7 +8,7 @@ import os
 import urllib.error
 import urllib.request
 
-DEFAULT_API_BASE = os.environ.get("HWT_API_BASE", "http://62.234.134.129:8000/api")
+DEFAULT_API_BASE = os.environ.get("HWT_API_BASE", "https://hwthuiwentong.com")
 
 
 class ApiError(Exception):
@@ -19,9 +19,17 @@ class DbManager:
     """Thin HTTP client matching the old SQLite DbManager method surface."""
 
     def __init__(self, base_url: str = DEFAULT_API_BASE):
-        self.base_url = base_url.rstrip("/")
+        self.base_url = self._normalize_base(base_url)
         # Fail fast with a readable error if the server is unreachable.
         self._request("GET", "/health")
+
+    @staticmethod
+    def _normalize_base(base_url: str) -> str:
+        """Append the /api prefix when the user only gives host:port."""
+        base_url = base_url.strip().rstrip("/")
+        if not base_url.endswith("/api"):
+            base_url += "/api"
+        return base_url
 
     # ---- HTTP helpers -------------------------------------------------
 
