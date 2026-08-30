@@ -4,6 +4,7 @@ import type { ArticleMeta, Comment } from "../types";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
+import rehypeHighlight from "rehype-highlight";
 import Sidebar from "../components/Sidebar";
 
 interface ArticleDetailProps {
@@ -167,7 +168,7 @@ export default function ArticleDetail({ id, onBack, onNavigate }: ArticleDetailP
           <div className="prose prose-invert max-w-none text-gray-300 text-sm leading-relaxed font-mono">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeRaw]}
+              rehypePlugins={[rehypeRaw, rehypeHighlight]}
               components={{
                 h2: ({ children, ...props }) => {
                   const id = String(children)
